@@ -78,7 +78,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .bar.show{transform:none}.bar img{width:30px;height:30px}.bar b{font-size:16px}
 
 .shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:18px;margin-top:-86px;position:relative;padding:0 max(18px,env(safe-area-inset-right,0px)) 40px max(18px,env(safe-area-inset-left,0px));max-width:1500px;margin-left:auto;margin-right:auto}
-.shell aside{background:var(--glass);border:1px solid color-mix(in srgb,var(--g1) 16%,transparent);border-right:1px solid color-mix(in srgb,var(--g1) 16%,transparent);border-radius:var(--radius);padding:12px;backdrop-filter:blur(10px);align-self:start;position:sticky;top:70px;max-height:calc(100vh - 86px);overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:10px}
+/* sidebar scrolls together with the page (one scrollbar) */
+.shell aside{background:var(--glass);border:1px solid color-mix(in srgb,var(--g1) 16%,transparent);border-right:1px solid color-mix(in srgb,var(--g1) 16%,transparent);border-radius:var(--radius);padding:12px;backdrop-filter:blur(10px);align-self:start;position:static;box-shadow:0 20px 50px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:10px}
 .shell .main{padding:0;max-width:none;margin:0;min-width:0}
 .shell .crumb{color:#c4d0e4;letter-spacing:.18em;text-shadow:0 1px 6px #000}
 .shell .pagehead{min-height:64px;align-items:flex-end}
@@ -90,7 +91,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 /* collapsible nav groups with icon tiles */
 .group+.group{margin-top:4px;padding-top:6px;border-top:1px solid rgba(41,55,81,.7)}
-.ghead{display:flex;align-items:center;gap:8px;width:100%;background:transparent;color:#8fa0bb;padding:8px;border-radius:8px;font-size:10.5px;font-weight:700;letter-spacing:.16em;transform:none!important}
+.ghead{display:flex;align-items:center;gap:8px;width:100%;text-align:left;white-space:nowrap;background:transparent;color:#8fa0bb;padding:8px;border-radius:8px;font-size:10.5px;font-weight:700;letter-spacing:.16em;transform:none!important}
 .ghead:hover{color:#dbe5f5;background:rgba(255,255,255,.03)}
 .ghead .dot{width:6px;height:6px;border-radius:50%;background:var(--hue);box-shadow:0 0 8px var(--hue)}
 .ghead .gcount{margin-left:auto;font-size:10px;letter-spacing:0;color:#6f7f99;font-weight:600;opacity:0;transition:opacity .2s}
@@ -113,7 +114,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 @media(max-width:760px){
   :root{--hero:150px}
   .shell{display:block;margin-top:-58px}
-  .shell aside{display:none;position:fixed;top:calc(54px + env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));bottom:10px;width:270px;max-height:none;z-index:12}
+  .shell aside{display:none;position:fixed;top:calc(54px + env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));bottom:10px;width:270px;max-height:none;overflow:auto;z-index:12}
   .shell aside.open{display:flex}
   .mobile-toggle{display:inline-block}
   .hero .brand{font-size:16px}.hero .mark{width:44px;height:44px}
