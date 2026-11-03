@@ -7,7 +7,9 @@ function adminIds(): Set<string> {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [Discord({ authorization: { params: { scope: 'identify' } } })],
+  // Full URL on purpose: the Discord provider defines `authorization` as a string, and passing
+  // only `{ params }` replaces it with an object that has no URL ("TypeError: Invalid URL" on sign-in).
+  providers: [Discord({ authorization: 'https://discord.com/api/oauth2/authorize?scope=identify' })],
   session: { strategy: 'jwt', maxAge: 60 * 60 * 12 },
   pages: { signIn: '/login', error: '/login' },
   callbacks: {
