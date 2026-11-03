@@ -1,0 +1,67 @@
+# VALIDATION — ผลการตรวจสอบอัตโนมัติ
+
+วันที่ตรวจ: 3 พ.ย. 2026 · Node v22.23.4 · TypeScript (strict, noUncheckedIndexedAccess)
+
+> **สำคัญ:** sandbox ที่ใช้สร้างโปรเจกต์นี้ถูกบล็อกจาก npm registry (proxy ตอบ 403) จึง **ติดตั้ง dependencies ไม่ได้**
+> (next, discord.js, bullmq, prisma, next-auth) ผลด้านล่างจึงแบ่งเป็น "รันจริงแล้ว" กับ "ยังไม่ได้รัน — ต้องรันบนเครื่องคุณ"
+
+## ✅ รันจริงแล้ว
+
+### 1. Unit tests — `packages/shared` → **25 passed, 0 failed**
+ใช้ zod 3.25 และ test file จริง (`packages/shared/test/shared.test.ts`) ไม่ได้แก้ test
+
+| กลุ่ม | สิ่งที่ทดสอบ | ผล |
+|---|---|---|
+| Template rendering (6) | ตัวแปร built-in/custom, {date} โซน Asia/Bangkok, ไม่แทนตัวแปรที่ไม่รู้จัก, กัน injection (ไม่ re-scan ค่า), กัน prototype key, render ใน embed | ✅ |
+| Permission checks (3) | invite bitfield = 604163072, หา permission ที่ขาด, เงื่อนไขห้องที่ส่งได้ (+Attach/+Webhook) | ✅ |
+| Embed limit validation (5) | ข้อความว่าง, รวม embed 6002/6000 ถูกปฏิเสธ, 6000 พอดีผ่าน, >10 embeds / >2000 ตัวอักษรถูกปฏิเสธ, embed ว่าง | ✅ |
+| Delivery retry logic (3) | 5xx/429/network = retry, 403/404/400 = ไม่ retry, exponential backoff + jitter bounds, ข้อความ error ภาษาคน | ✅ |
+| Schemas (6) | confirmCount ต้องตรงจำนวนปลายทาง, @everyone ต้องยืนยันเพิ่ม, ห้องซ้ำ, ชื่อ webhook ห้าม "discord", bio ≤190 / null = inherit | ✅ |
+| Token encryption (2) | AES-256-GCM round-trip, IV สุ่ม, ปฏิเสธข้อมูลที่ถูกแก้/คีย์ผิด | ✅ |
+
+### 2. Typecheck strict — `packages/shared` (src + tests) → **ผ่าน 0 errors**
+(พบและแก้ 1 จุดใน test: indexed access ที่อาจเป็น undefined)
+
+### 3. Static checks ทั้ง monorepo — `scripts/static-checks.mjs` → **ผ่านทั้งหมด**
+```
+[1] syntax: 80 files parsed
+[2] @nexus/shared imports: 74 names resolved
+[3] local imports: 165 resolved
+[4] route files: 26 checked (exports + auth guard)
+[5] client components: 16 checked for server/secret imports
+[6] tokenEnc confined to encrypt-on-write in api/bots
+[7] prisma: 13 models, 5 enums cross-checked
+[8] prisma accessors match models
+
+STATIC CHECKS: all passed
+```
+สิ่งที่ตรวจ: syntax ของทุกไฟล์ TS/TSX · ชื่อที่ import จาก @nexus/shared มีจริง · import ภายในโปรเจกต์ resolve ได้ทุกตัว ·
+route ของ Next.js export เฉพาะชื่อที่อนุญาตและมี auth guard ทุกตัว · client component ไม่ import โค้ดฝั่ง server/ความลับ ·
+`tokenEnc` ถูกใช้เฉพาะตอนเข้ารหัสใน POST /api/bots · Prisma relation/type อ้างถึง model ที่มีจริง · `prisma.<model>` ทุกจุดมี model รองรับ
+
+### 4. Manual code review (โดยผู้สร้าง) — พบและแก้แล้ว
+| # | ปัญหา | การแก้ |
+|---|---|---|
+| 1 | อัปโหลดไฟล์แนบหลายไฟล์พร้อมกัน เก็บได้แค่ไฟล์สุดท้าย (stale state ใน loop) | เปลี่ยนเป็น functional state update |
+| 2 | `api/bots/route.ts` export ตัวแปรที่ไม่ใช่ route → `next build` จะ fail | เลิก export |
+| 3 | ลบ Bot ขณะ worker ยังทำงาน → `prisma.update` throw | ใช้ `updateMany` + ข้ามเมื่อไม่พบ bot |
+| 4 | `pnpm --filter db deploy` ชนกับคำสั่ง built-in ของ pnpm | เปลี่ยนชื่อ script เป็น `migrate:deploy` |
+
+## ⏳ ยังไม่ได้รัน (ต้องมี dependencies) — คำสั่งสำหรับรันบนเครื่องคุณ
+
+```bash
+pnpm install
+pnpm db:generate                      # ตรวจ Prisma schema จริง (prisma validate)
+pnpm typecheck                        # tsc strict ของ shared + db + bot + web
+pnpm test                             # vitest จริง (ควรได้ 25 passed)
+pnpm --filter @nexus/web build        # next build (ตรวจ route types, RSC boundaries)
+node scripts/static-checks.mjs .      # static checks ชุดเดียวกับด้านบน
+docker compose up --build             # end-to-end
+```
+
+| สิ่งที่ยังไม่ยืนยัน | ความเสี่ยง |
+|---|---|
+| Typecheck ของ `apps/bot` กับ types ของ discord.js / bullmq | กลาง — ใช้ API ตามเอกสาร v14/v5 แต่ยังไม่ได้คอมไพล์จริง |
+| Typecheck + `next build` ของ `apps/web` (Next 15, next-auth v5 beta) | กลาง — โดยเฉพาะ type ของ argument ที่ 2 ใน route handler |
+| `prisma validate` / migration แรก | ต่ำ — ตรวจโครงสร้างด้วยสคริปต์แล้ว |
+| การทำงานกับ Discord จริง | ดู HUMAN_REVIEW.md |

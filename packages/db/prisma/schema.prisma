@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id        String    @id @default(cuid())
+  discordId String    @unique
+  name      String?
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+}
+
+enum BotStatus {
+  OFFLINE
+  STARTING
+  ONLINE
+  ERROR
+}
+
+model Bot {
+  id             String         @id @default(cuid())
+  /// Bot user ID == application ID for bot applications
+  applicationId  String         @unique
+  username       String
+  avatarUrl      String?
+  /// AES-256-GCM encrypted token. Never selected for API responses.
+  tokenEnc       String
+  desiredRunning Boolean        @default(true)
+  status         BotStatus      @default(OFFLINE)
+  pingMs         Int?
+  startedAt      DateTime?
+  lastError      String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  guilds         Guild[]
+  announcements  Announcement[]
+}
+
+model Guild {
+  id               String               @id @default(cuid())
+  botId            String
+  guildId          String
+  name             String
+  iconUrl          String?
+  memberCount      Int                  @default(0)
+  joinedAt         DateTime?
+  /// false after the bot left / was kicked
+  present          Boolean              @default(true)
+  /// Guild-level permissions the bot is missing (names from @nexus/shared PERMS)
+  missingPerms     String[]
+  defaultChannelId String?
+  customVars       Json                 @default("{}")
+  /// Last nickname observed on Discord, for desired-vs-live diff
+  liveNick         String?
+  updatedAt        DateTime             @updatedAt
+  bot              Bot                  @relation(fields: [botId], references: [id], onDelete: Cascade)
+  channels         Channel[]
+  profile          GuildProfile?
+  targets          AnnouncementTarget[]
+
+  @@unique([botId, guildId])
+  @@index([botId, present])
+}
+
+/// Cache of text/announcement channels, kept fresh by the bot worker from gateway events.
+model Channel {
+  id                 String  @id @default(cuid())
+  guildRefId         String
+  channelId          String
+  name               String
+  /// 0 = GuildText, 5 = GuildAnnouncement
+  type               Int
+  position           Int     @default(0)
+  parentName         String?
+  canSend            Boolean
+  canAttach          Boolean
+  canWebhook         Boolean
+  canMentionEveryone Boolean @default(false)
+  guild              Guild   @relation(fields: [guildRefId], references: [id], onDelete: Cascade)
+
+  @@unique([guildRefId, channelId])
+}
+
+enum SyncStatus {
+  SYNCED
+  PENDING
+  FAILED
+}
+
+/// Desired per-server identity. null field = inherit global.
+model GuildProfile {
+  id            String     @id @default(cuid())
+  guildRefId    String     @unique
+  nick          String?
+  bio           String?
+  avatarAssetId String?
+  bannerAssetId String?
+  status        SyncStatus @default(PENDING)
+  /// Hash of the desired state last applied successfully (skips redundant PATCHes)
+  appliedHash   String?
+  lastError     String?
+  lastAppliedAt DateTime?
+  updatedAt     DateTime   @updatedAt
+  guild         Guild      @relation(fields: [guildRefId], references: [id], onDelete: Cascade)
+}
+
+model ProfilePreset {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  nick          String?
+  bio           String?
+  avatarAssetId String?
+  bannerAssetId String?
+  createdAt     DateTime @default(now())
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  /// image | attachment
+  kind      String
+  mime      String
+  size      Int
+  fileName  String
+  /// file name inside UPLOAD_DIR (generated, never user-controlled)
+  storedAs  String   @unique
+  createdAt DateTime @default(now())
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  DONE
+  PARTIAL
+  FAILED
+  DELETED
+}
+
+model Announcement {
+  id            String               @id @default(cuid())
+  botId         String
+  title         String
+  /// MessagePayload (zod-validated)
+  payload       Json
+  allowEveryone Boolean              @default(false)
+  crosspost     Boolean              @default(false)
+  isTest        Boolean              @default(false)
+  status        AnnouncementStatus   @default(DRAFT)
+  createdBy     String
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  bot           Bot                  @relation(fields: [botId], references: [id], onDelete: Cascade)
+  targets       AnnouncementTarget[]
+  schedule      Schedule?
+
+  @@index([createdAt])
+}
+
+enum TargetMode {
+  BOT
+  WEBHOOK
+}
+
+model AnnouncementTarget {
+  id               String       @id @default(cuid())
+  announcementId   String
+  guildRefId       String
+  channelId        String
+  mode             TargetMode   @default(BOT)
+  pingRoleId       String?
+  extraText        String?
+  skip             Boolean      @default(false)
+  webhookName      String?
+  webhookAvatarUrl String?
+  announcement     Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  guild            Guild        @relation(fields: [guildRefId], references: [id], onDelete: Cascade)
+  deliveries       Delivery[]
+
+  @@unique([announcementId, guildRefId, channelId])
+}
+
+enum DeliveryStatus {
+  QUEUED
+  SENT
+  FAILED
+  DELETED
+}
+
+/// One row per target per run (cron schedules create a new run each time).
+model Delivery {
+  id        String             @id @default(cuid())
+  targetId  String
+  run       Int                @default(1)
+  status    DeliveryStatus     @default(QUEUED)
+  messageId String?
+  webhookId String?
+  attempts  Int                @default(0)
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  target    AnnouncementTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([targetId, run])
+  @@index([status])
+}
+
+model TargetGroup {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  guildRefIds String[]
+  createdAt   DateTime @default(now())
+}
+
+model Schedule {
+  id             String       @id @default(cuid())
+  announcementId String       @unique
+  runAt          DateTime?
+  cron           String?
+  timezone       String       @default("Asia/Bangkok")
+  active         Boolean      @default(true)
+  lastRunAt      DateTime?
+  createdAt      DateTime     @default(now())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  action    String
+  /// e.g. { servers: number, ids: string[] }
+  targets   Json     @default("{}")
+  result    String
+  detail    Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

@@ -1,0 +1,12 @@
+# Railway service 'bot' (set Dockerfile path to Dockerfile.bot)
+# One image definition, two targets: `web` and `bot`.
+FROM node:22-slim AS base
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/* \
+  && corepack enable
+WORKDIR /app
+COPY . .
+RUN pnpm install --frozen-lockfile=false && pnpm --filter @nexus/db generate
+
+FROM base AS bot
+ENV NODE_ENV=production
+CMD ["sh", "-c", "pnpm db:deploy && pnpm --filter @nexus/bot start"]
