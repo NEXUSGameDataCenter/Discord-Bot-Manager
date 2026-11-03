@@ -66,6 +66,21 @@ route ของ Next.js export เฉพาะชื่อที่อนุญ�
 - Asset storage ยังเป็น `local` จนกว่าจะตั้ง `SUPABASE_SERVICE_ROLE_KEY`
 - Login ยังไม่ได้ทดสอบ เพราะยังไม่ได้ตั้ง `AUTH_DISCORD_ID` และ `AUTH_DISCORD_SECRET`
 
+
+## ✅ เฟส 2 — โมดูล Welcome / Reaction Roles / Moderation / Honeypot (commit b99f7d3)
+
+| ตรวจ | ผล |
+|---|---|
+| Unit tests `packages/shared` | ✅ 41 passed (เดิม 25 + ใหม่ 16: โหมด reaction role 5 แบบ, honeypot trigger, ลำดับ role, parse duration, schema) |
+| Typecheck strict `packages/shared` | ✅ 0 errors |
+| Static checks (32 route files, 21 client components) | ✅ ผ่านทั้งหมด |
+| `next build` บน Railway (รวมหน้าใหม่ 3 หน้า) | ✅ SUCCESS |
+| bot worker บน Railway | ✅ `bot worker ready` |
+| `prisma db push` → ตาราง Role, GuildSettings, RoleMenu, ModCase ใน schema `nexus` | ✅ ยืนยันด้วย SQL |
+
+หมายเหตุ: auto-deploy จาก GitHub ไม่ทำงานรอบแรกเพราะชื่อ repo เปลี่ยนตัวพิมพ์ แก้แล้วโดยผูก source ใหม่เป็น `NEXUSGameDataCenter/Discord-Bot-Manager`
+ยังไม่ทดสอบกับ Discord จริง (ต้องตั้ง OAuth + เปิด Server Members Intent) → HUMAN_REVIEW.md หมวด J
+
 ## ⏳ ยังไม่ได้รัน (ต้องมี dependencies) — คำสั่งสำหรับรันบนเครื่องคุณ
 
 ```bash
