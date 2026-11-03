@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
   transpilePackages: ['@nexus/shared', '@nexus/db'],
   serverExternalPackages: ['@prisma/client', 'bullmq', 'ioredis', 'pino'],
   poweredByHeader: false,

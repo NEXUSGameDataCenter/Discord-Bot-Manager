@@ -47,6 +47,25 @@ route ของ Next.js export เฉพาะชื่อที่อนุญ�
 | 3 | ลบ Bot ขณะ worker ยังทำงาน → `prisma.update` throw | ใช้ `updateMany` + ข้ามเมื่อไม่พบ bot |
 | 4 | `pnpm --filter db deploy` ชนกับคำสั่ง built-in ของ pnpm | เปลี่ยนชื่อ script เป็น `migrate:deploy` |
 
+
+## ✅ ผลจริงบน Railway (deploy 3 พ.ย. 2026, commit 432064c)
+
+| ตรวจ | ผล |
+|---|---|
+| `pnpm install` + `prisma generate` ใน Docker | ✅ ผ่าน |
+| `next build` (Next.js 15.5.28) — รวม typecheck ของ apps/web | ✅ ผ่าน |
+| bot worker start (tsx) | ✅ `bot worker ready` port 8081 |
+| `prisma db push` ไป Supabase schema `nexus` | ✅ สร้าง 13 ตาราง (ยืนยันด้วย SQL) |
+| web start | ✅ Ready, health check `/login` ผ่าน |
+| Redis (Railway template) | ✅ SUCCESS |
+
+แก้หลัง deploy: เอา `output: 'standalone'` ออก (ขัดกับ `next start`)
+
+ยังค้าง:
+- `apps/bot` รันด้วย tsx จึงยังไม่ผ่าน `tsc` แบบ strict จริง (ไม่ขวางการทำงาน) → รัน `pnpm --filter @nexus/bot typecheck`
+- Asset storage ยังเป็น `local` จนกว่าจะตั้ง `SUPABASE_SERVICE_ROLE_KEY`
+- Login ยังไม่ได้ทดสอบ เพราะยังไม่ได้ตั้ง `AUTH_DISCORD_ID` และ `AUTH_DISCORD_SECRET`
+
 ## ⏳ ยังไม่ได้รัน (ต้องมี dependencies) — คำสั่งสำหรับรันบนเครื่องคุณ
 
 ```bash
