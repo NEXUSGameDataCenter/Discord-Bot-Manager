@@ -97,6 +97,20 @@ route ของ Next.js export เฉพาะชื่อที่อนุญ�
 ลิงก์ต้องกดปุ่ม (POST) กันระบบสแกนอีเมลใช้ token ไปก่อน, สิทธิ์และสถานะอ่านจาก DB ทุก request
 ยังไม่ได้ทดสอบส่งอีเมลจริง (ยังไม่ได้ตั้ง SMTP_URL / RESEND_API_KEY) → HUMAN_REVIEW.md หมวด K
 
+
+## ✅ เฟส 4 — รหัสผ่าน + ขอเข้าร่วม/อนุมัติ + UI ใหม่ (commit c8dab9f)
+
+| ตรวจ | ผล |
+|---|---|
+| Unit tests `packages/shared` | ✅ 45 passed (+1: access request / change password schema) |
+| scrypt hash/verify (รหัสถูกผ่าน, รหัสผิดถูกปฏิเสธ) | ✅ |
+| Static checks (38 route files มี role guard, JSX `<details>` ปิดครบทุกหน้า) | ✅ |
+| `next build` + start บน Railway (web + bot) | ✅ SUCCESS |
+| `db push`: คอลัมน์ `passwordHash`, `requestNote` + สถานะ `PENDING` | ✅ ยืนยันด้วย SQL |
+
+ไม่มีการส่งอีเมลแล้ว (Railway บล็อก SMTP บนแพลนปัจจุบัน) · จำกัด login 10 ครั้ง/15 นาที/อีเมล และ 30/IP,
+คำขอเข้าร่วม 5 ครั้ง/ชม./IP · ทดสอบ flow ในเบราว์เซอร์ → HUMAN_REVIEW.md หมวด K
+
 ## ⏳ ยังไม่ได้รัน (ต้องมี dependencies) — คำสั่งสำหรับรันบนเครื่องคุณ
 
 ```bash
