@@ -1,10 +1,10 @@
 import { prisma } from '@nexus/db';
 import { PERMISSION_FIX, type PermName } from '@nexus/shared';
-import { route } from '@/lib/server/route';
+import { routeAs } from '@/lib/server/route';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = route(async (req) => {
+export const GET = routeAs('EDITOR', async (req) => {
   const url = new URL(req.url);
   const botId = url.searchParams.get('botId') ?? undefined;
   const guilds = await prisma.guild.findMany({

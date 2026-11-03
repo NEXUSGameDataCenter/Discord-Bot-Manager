@@ -2,24 +2,32 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { hasRole, type TeamRole } from '@nexus/shared';
 import { useApi } from '@/lib/client';
 
 type Toast = { text: string; error?: boolean } | null;
 const ToastCtx = createContext<(text: string, error?: boolean) => void>(() => undefined);
 export const useToast = () => useContext(ToastCtx);
 
-const groups: { label: string; items: [string, string, string][] }[] = [
-  { label: 'OVERVIEW', items: [['/', '▦', 'ภาพรวมระบบ'], ['/bots', '♟', 'จัดการ Bots'], ['/servers', '▤', 'จัดการ Servers']] },
-  { label: 'BOT CUSTOMIZATION', items: [['/profiles', '◉', 'Server Profiles'], ['/presets', '▱', 'Profile Presets']] },
-  { label: 'MODULES', items: [['/welcome', '✋', 'Welcome & Auto roles'], ['/reaction-roles', '◎', 'Reaction Roles'], ['/moderation', '⛨', 'Moderation & Honeypot']] },
+type Item = [href: string, ico: string, label: string, min: TeamRole];
+const groups: { label: string; items: Item[] }[] = [
+  { label: 'OVERVIEW', items: [['/', '▦', 'ภาพรวมระบบ', 'EDITOR'], ['/bots', '♟', 'จัดการ Bots', 'ADMIN'], ['/servers', '▤', 'จัดการ Servers', 'ADMIN']] },
+  { label: 'BOT CUSTOMIZATION', items: [['/profiles', '◉', 'Server Profiles', 'ADMIN'], ['/presets', '▱', 'Profile Presets', 'ADMIN']] },
+  { label: 'MODULES', items: [['/welcome', '✋', 'Welcome & Auto roles', 'ADMIN'], ['/reaction-roles', '◎', 'Reaction Roles', 'ADMIN'], ['/moderation', '⛨', 'Moderation & Honeypot', 'ADMIN']] },
   {
     label: 'COMMUNICATION',
-    items: [['/announcements', '➤', 'Announcements'], ['/targets', '♧', 'Target Groups'], ['/tracking', '⌁', 'Delivery Tracking'], ['/schedules', '◷', 'Schedules']],
+    items: [['/announcements', '➤', 'Announcements', 'EDITOR'], ['/targets', '♧', 'Target Groups', 'EDITOR'], ['/tracking', '⌁', 'Delivery Tracking', 'EDITOR'], ['/schedules', '◷', 'Schedules', 'EDITOR']],
   },
-  { label: 'SYSTEM', items: [['/audit', '▤', 'Audit Logs'], ['/settings', '⚙', 'Settings']] },
+  { label: 'ACCOUNT', items: [['/me', '☺', 'My Profile', 'EDITOR'], ['/team', '♙', 'Team', 'EDITOR']] },
+  { label: 'SYSTEM', items: [['/audit', '▤', 'Audit Logs', 'ADMIN'], ['/settings', '⚙', 'Settings', 'ADMIN']] },
 ];
 
-export function Shell({ user, children }: { user: { name?: string | null; image?: string | null }; children: React.ReactNode }) {
+export type ShellUser = { name: string; email: string; role: TeamRole; avatarAssetId: string | null };
+const UserCtx = createContext<ShellUser | null>(null);
+/** The signed-in member (from the server layout). */
+export const useMe = () => useContext(UserCtx)!;
+
+export function Shell({ user, children }: { user: ShellUser; children: React.ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
@@ -34,6 +42,7 @@ export function Shell({ user, children }: { user: { name?: string | null; image?
   const active = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 
   return (
+    <UserCtx.Provider value={user}>
     <ToastCtx.Provider value={notify}>
       <div className="app">
         <header className="topbar">
@@ -49,10 +58,10 @@ export function Shell({ user, children }: { user: { name?: string | null; image?
               <div className="eyebrow">ACTIVE WORKSPACE</div>
               <strong>◈ &nbsp; Nexus Workspace</strong>
               <br />
-              <small>Administrator</small>
+              <small>{user.role}</small>
             </div>
             <div>
-              {groups.map((g) => (
+              {groups.map((g) => ({ ...g, items: g.items.filter((i) => hasRole(user.role, i[3])) })).filter((g) => g.items.length).map((g) => (
                 <div className="navgroup" key={g.label}>
                   <div className="eyebrow">{g.label}</div>
                   {g.items.map(([href, ico, label]) => (
@@ -68,15 +77,16 @@ export function Shell({ user, children }: { user: { name?: string | null; image?
             <div className="security">
               <strong>◈ SECURITY STATUS</strong>
               <br />
-              <span style={{ color: '#6ee7b7' }}>● Admin allow-list active</span>
+              <span style={{ color: '#6ee7b7' }}>● Invite-only email sign-in</span>
               <br />
               <small>Tokens encrypted · AES-256-GCM</small>
             </div>
             <div className="admin">
-              <div className="avatar">{user.image ? <img src={user.image} alt="" style={{ width: 30, height: 30, borderRadius: '50%' }} /> : '♙'}</div>
-              <div className="grow">
-                <strong style={{ fontSize: 12 }}>{user.name ?? 'Administrator'}</strong>
-                <br />
+              <Link href="/me" className="avatar" style={{ overflow: 'hidden' }} title="My Profile">
+                {user.avatarAssetId ? <img src={`/api/assets/${user.avatarAssetId}`} alt="" style={{ width: 30, height: 30, objectFit: 'cover' }} /> : '♙'}
+              </Link>
+              <div className="grow" style={{ minWidth: 0 }}>
+                <strong style={{ fontSize: 12, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name}</strong>
                 <a href="/api/auth/signout" style={{ fontSize: 11 }}>Sign out</a>
               </div>
             </div>
@@ -86,6 +96,7 @@ export function Shell({ user, children }: { user: { name?: string | null; image?
       </div>
       {toast && <div className={`toast ${toast.error ? 'error' : ''}`} role="status">{toast.error ? '✕  ' : '✓  '}{toast.text}</div>}
     </ToastCtx.Provider>
+    </UserCtx.Provider>
   );
 }
 

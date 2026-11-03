@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis';
 import { EVENTS_CHANNEL } from '@nexus/shared';
-import { requireAdmin } from '@/lib/server/route';
+import { requireUser } from '@/lib/server/route';
 import { serverEnv } from '@/lib/server/env';
 
 export const runtime = 'nodejs';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 /** Redis pub/sub -> Server-Sent Events. One subscriber connection per open tab. */
 export async function GET(req: Request) {
   try {
-    await requireAdmin();
+    await requireUser('EDITOR');
   } catch {
     return new Response('Unauthorized', { status: 401 });
   }

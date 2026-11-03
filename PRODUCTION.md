@@ -12,9 +12,8 @@
 
 | ☐ | ขั้นตอน | ใคร | ที่ไหน |
 |---|---|---|---|
-| ☐ | สร้าง/เลือก Discord application สำหรับ **login เข้า Dashboard** แล้วคัดลอก Client ID + Client Secret | 👤 | discord.com/developers → OAuth2 |
-| ☐ | เพิ่ม Redirect `https://nexusmanager.up.railway.app/api/auth/callback/discord` (และโดเมนจริงถ้ามี ดูข้อ 4) | 👤 | Developer Portal → OAuth2 → Redirects |
-| ☐ | ตั้ง `AUTH_DISCORD_ID` และ `AUTH_DISCORD_SECRET` ใน service **web** | 👤 | Railway → nexus-bot-control → web → Variables |
+| ☐ | ตั้งค่าส่งอีเมล: `SMTP_URL` (Gmail App Password) หรือ `RESEND_API_KEY` + `EMAIL_FROM` ใน service **web** | 👤 | Railway → web → Variables |
+| ☐ | เชิญสมาชิกทีมจากหน้า **Team** และให้ทุกคนตั้งชื่อ/รูปที่ **My Profile** | 👤 | Dashboard |
 | ☐ | คัดลอก `service_role` key แล้วตั้ง `SUPABASE_SERVICE_ROLE_KEY` ใน **web** และ **bot** (ถ้าไม่ตั้ง รูป/ไฟล์แนบจะหายทุกครั้งที่ redeploy) | 👤 | Supabase → Project Settings → API Keys |
 | ☐ | Bot application: เปิด **Server Members Intent** (ไม่ต้องเปิด Message Content) | 👤 | Developer Portal → Bot → Privileged Gateway Intents |
 | ☐ | Login เข้า Dashboard → **จัดการ Bots → Add Bot** วาง bot token | 👤 | Dashboard |
@@ -27,7 +26,7 @@
 |---|---|---|---|
 | ☐ | **เปลี่ยนรหัสผ่าน DB ของ role `nexus_app`** และอัปเดต `DATABASE_URL` ใน Railway | 🤖 | รหัสเดิมปรากฏในแชตตอนตั้งค่า |
 | ☐ | สำรอง `ENCRYPTION_KEY` ไว้ในที่ปลอดภัยนอก Railway (password manager) | 👤 | ถ้า key หาย token ของ Bot ทุกตัวจะถอดรหัสไม่ได้ ต้องเพิ่มใหม่หมด |
-| ☐ | ตรวจว่า `ADMIN_DISCORD_IDS` มีเฉพาะคนที่ควรเข้าได้ | 👤 | เป็นด่านเดียวของการเข้าระบบ |
+| ☐ | ตรวจรายชื่อในหน้า **Team** ให้มีเฉพาะคนที่ควรเข้าได้ และให้สิทธิ์ต่ำที่สุดที่พอใช้ (Editor) | 👤 | |
 | ☐ | ตรวจ Supabase → Advisors (Security) ว่าไม่มีคำเตือนเกี่ยวกับ schema `nexus` | 🤖 | schema นี้ไม่ได้เปิดผ่าน API แต่ควรยืนยัน |
 | ☐ | เพิ่ม rate limit ที่ API ของ Dashboard (เช่น 60 req/นาที/คน) | 🤖 | ตอนนี้มีแค่ allow-list |
 | ☐ | Bot token ที่เคยวางในที่อื่น (แชต/ไฟล์) ให้ **Reset Token** ก่อนเพิ่มเข้าระบบ | 👤 | |

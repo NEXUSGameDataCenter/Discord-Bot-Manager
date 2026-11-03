@@ -1,12 +1,12 @@
 import { prisma } from '@nexus/db';
 import { CONFIG_CHANNEL, guildSettingsSchema } from '@nexus/shared';
-import { route, body, notFound, HttpError } from '@/lib/server/route';
+import { HttpError, body, notFound, route, routeAs } from '@/lib/server/route';
 import { redis } from '@/lib/server/queue';
 import { audit } from '@/lib/server/audit';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = route(async (_req, { params }) => {
+export const GET = routeAs('EDITOR', async (_req, { params }) => {
   const g = (await prisma.guild.findUnique({ where: { id: params.id! }, include: { settings: true } })) ?? notFound('Server not found');
   return { settings: g.settings, guild: { id: g.id, name: g.name, missingPerms: g.missingPerms } };
 });

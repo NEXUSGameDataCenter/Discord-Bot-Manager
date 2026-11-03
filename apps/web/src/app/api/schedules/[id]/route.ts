@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '@nexus/db';
-import { route, body, notFound } from '@/lib/server/route';
+import { body, notFound, routeAs } from '@/lib/server/route';
 import { queues, scheduleJobId } from '@/lib/server/queue';
 import { audit } from '@/lib/server/audit';
 
@@ -10,7 +10,7 @@ async function unschedule(announcementId: string) {
   await q.remove(scheduleJobId(announcementId)).catch(() => undefined);
 }
 
-export const PATCH = route(async (req, { params, actor }) => {
+export const PATCH = routeAs('EDITOR', async (req, { params, actor }) => {
   const { active } = z.object({ active: z.boolean() }).parse(await body(req));
   const s = (await prisma.schedule.findUnique({ where: { id: params.id! } })) ?? notFound('Schedule not found');
   await unschedule(s.announcementId);
@@ -25,7 +25,7 @@ export const PATCH = route(async (req, { params, actor }) => {
   return { ok: true };
 });
 
-export const DELETE = route(async (_req, { params, actor }) => {
+export const DELETE = routeAs('EDITOR', async (_req, { params, actor }) => {
   const s = (await prisma.schedule.findUnique({ where: { id: params.id! } })) ?? notFound('Schedule not found');
   await unschedule(s.announcementId);
   await prisma.schedule.delete({ where: { id: s.id } });

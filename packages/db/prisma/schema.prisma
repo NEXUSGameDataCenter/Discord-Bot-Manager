@@ -331,3 +331,44 @@ model ModCase {
   @@unique([guildRefId, caseNo])
   @@index([guildRefId, targetUserId])
 }
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  EDITOR
+}
+
+enum MemberStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+/// Dashboard user. Sign-in is by email link; only invited emails can sign in.
+model TeamMember {
+  id            String       @id @default(cuid())
+  /// Always stored lowercase
+  email         String       @unique
+  name          String?
+  avatarAssetId String?
+  role          TeamRole     @default(EDITOR)
+  status        MemberStatus @default(INVITED)
+  invitedBy     String?
+  lastLogin     DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+/// Single-use sign-in / invite link. Only the SHA-256 hash of the token is stored.
+model MagicToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  email     String
+  /// LOGIN (15 min) | INVITE (7 days)
+  purpose   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
+}

@@ -1,8 +1,9 @@
 import 'server-only';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { prisma, type TeamMember } from '@nexus/db';
+import { hasRole, type TeamRole } from '@nexus/shared';
 import { auth } from '@/auth';
-import { adminIds } from './env';
 import { logger } from './logger';
 
 export class HttpError extends Error {
@@ -11,22 +12,26 @@ export class HttpError extends Error {
   }
 }
 
-export async function requireAdmin(): Promise<string> {
+/** Re-reads the member from the DB on every request: removing or disabling someone takes effect immediately. */
+export async function requireUser(min: TeamRole = 'EDITOR'): Promise<TeamMember> {
   const s = await auth();
-  const id = s?.user?.discordId;
-  if (!id || !adminIds().has(id)) throw new HttpError(401, 'Unauthorized');
-  return id;
+  const id = s?.user?.id;
+  if (!id) throw new HttpError(401, 'Unauthorized');
+  const m = await prisma.teamMember.findUnique({ where: { id } });
+  if (!m || m.status !== 'ACTIVE') throw new HttpError(401, 'Unauthorized');
+  if (!hasRole(m.role, min)) throw new HttpError(403, 'สิทธิ์ของคุณไม่พอสำหรับการดำเนินการนี้ — ติดต่อ Owner ของทีม');
+  return m;
 }
 
 type Ctx = { params: Promise<Record<string, string>> };
-type Handler = (req: Request, ctx: { params: Record<string, string>; actor: string }) => Promise<unknown>;
+type Handler = (req: Request, ctx: { params: Record<string, string>; actor: string; member: TeamMember }) => Promise<unknown>;
 
-/** Auth + zod + error mapping for every API route. Never leaks internals to the client. */
-export function route(fn: Handler) {
+/** Role guard + zod + error mapping for every API route. Never leaks internals to the client. */
+export function routeAs(min: TeamRole, fn: Handler) {
   return async (req: Request, ctx: Ctx) => {
     try {
-      const actor = await requireAdmin();
-      const out = await fn(req, { params: await ctx.params, actor });
+      const member = await requireUser(min);
+      const out = await fn(req, { params: await ctx.params, actor: member.email, member });
       return out instanceof Response ? out : NextResponse.json(out ?? { ok: true });
     } catch (e) {
       if (e instanceof ZodError) {
@@ -38,6 +43,9 @@ export function route(fn: Handler) {
     }
   };
 }
+
+/** Default guard is ADMIN. Use routeAs('EDITOR', ...) for read and announcement routes, 'OWNER' for team management. */
+export const route = (fn: Handler) => routeAs('ADMIN', fn);
 
 export async function body(req: Request): Promise<unknown> {
   try {

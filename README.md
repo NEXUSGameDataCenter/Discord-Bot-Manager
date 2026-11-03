@@ -25,10 +25,15 @@ Dashboard แบบ self-hosted สำหรับควบคุม Discord bot
 
 1. ไปที่ <https://discord.com/developers/applications> → **New Application**
 2. แท็บ **Bot** → Privileged Gateway Intents → เปิด **Server Members Intent** (ใช้กับ Welcome/Auto roles) — ไม่ต้องเปิด Message Content
-3. แท็บ **OAuth2** → คัดลอก **Client ID** และ **Client Secret** (ใช้สำหรับ login เข้า Dashboard)
-   และเพิ่ม Redirect: `http://localhost:3000/api/auth/callback/discord` (และ URL จริงตอน deploy)
 
-> แนะนำแยก 2 app: app หนึ่งสำหรับ OAuth login ของ Dashboard อีก app (หรือหลาย app) เป็น Bot ที่ควบคุม — ใช้ app เดียวกันก็ได้
+
+## เข้าสู่ระบบ Dashboard
+
+- เข้าสู่ระบบด้วย**ลิงก์ทางอีเมล**เท่านั้น (ไม่มีรหัสผ่าน) และเฉพาะอีเมลที่ถูกเชิญ
+- `OWNER_EMAIL` คือ Owner คนแรก ขอลิงก์ได้เสมอ คนอื่นเชิญจากหน้า **Team**
+- สิทธิ์: **Owner** (จัดการทีม + ทุกอย่าง) · **Admin** (ทุกอย่างยกเว้นจัดการทีม) · **Editor** (ประกาศ/ตั้งเวลา/ดูข้อมูล)
+- แต่ละคนแก้ชื่อและรูปของตัวเองได้ที่หน้า **My Profile**
+- ตั้งค่าส่งอีเมล: `RESEND_API_KEY` หรือ `SMTP_URL` + `EMAIL_FROM` (ดู `.env.example`) — ถ้ายังไม่ตั้ง ลิงก์ของ Owner จะถูกเขียนใน log ของ service web แทน และหน้า Team มีปุ่มคัดลอกลิงก์เชิญให้ส่งเองได้
 
 ## 2. รับ Bot Token
 
@@ -64,12 +69,12 @@ cp .env.example .env
 # ใส่ค่า:
 #   ENCRYPTION_KEY=$(openssl rand -hex 32)
 #   AUTH_SECRET=$(openssl rand -base64 32)
-#   AUTH_DISCORD_ID / AUTH_DISCORD_SECRET   (จากขั้นที่ 1)
-#   ADMIN_DISCORD_IDS=<Discord user ID ของคุณ>  (เปิด Developer Mode → คลิกขวาที่ชื่อ → Copy User ID)
+#   OWNER_EMAIL=<อีเมลของคุณ>
+#   SMTP_URL หรือ RESEND_API_KEY + EMAIL_FROM
 docker compose up --build
 ```
 
-เปิด <http://localhost:3000> → Sign in with Discord → เพิ่ม Bot → Invite เข้า Server → ไปที่ **Announcements**
+เปิด <http://localhost:3000> → ใส่ OWNER_EMAIL → กดลิงก์ในอีเมล → เพิ่ม Bot → Invite เข้า Server → ไปที่ **Announcements**
 
 รันแบบ dev (ไม่ใช้ docker สำหรับแอป):
 
@@ -84,7 +89,7 @@ pnpm test                                          # unit tests (packages/shared
 
 ## 5. Deploy
 
-**VPS:** ติดตั้ง Docker แล้ว `docker compose up -d --build` ไว้หลัง reverse proxy (Caddy/Nginx) ที่ทำ HTTPS ตั้ง `AUTH_URL=https://your-domain` และเพิ่ม redirect URL ใน Developer Portal
+**VPS:** ติดตั้ง Docker แล้ว `docker compose up -d --build` ไว้หลัง reverse proxy (Caddy/Nginx) ที่ทำ HTTPS ตั้ง `AUTH_URL=https://your-domain`
 
 **Railway:** สร้าง 4 services — PostgreSQL, Redis, `bot` (Dockerfile target `bot`), `web` (Dockerfile target `web`)
 - ตั้ง env ตาม `.env.example` ทั้งสอง service, `BOT_HEALTH_URL=http://bot.railway.internal:8081/health`

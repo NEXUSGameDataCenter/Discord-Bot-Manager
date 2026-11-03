@@ -1,10 +1,10 @@
 import { prisma } from '@nexus/db';
-import { route, notFound } from '@/lib/server/route';
+import { notFound, routeAs } from '@/lib/server/route';
 import { queues, RETRY_OPTS } from '@/lib/server/queue';
 import { audit } from '@/lib/server/audit';
 
 /** Retry only FAILED deliveries of the latest run. */
-export const POST = route(async (_req, { params, actor }) => {
+export const POST = routeAs('EDITOR', async (_req, { params, actor }) => {
   const a = (await prisma.announcement.findUnique({ where: { id: params.id! }, select: { id: true } })) ?? notFound('Announcement not found');
   const agg = await prisma.delivery.aggregate({ _max: { run: true }, where: { target: { announcementId: a.id } } });
   const run = agg._max.run;

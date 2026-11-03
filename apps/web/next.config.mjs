@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@nexus/shared', '@nexus/db'],
-  serverExternalPackages: ['@prisma/client', 'bullmq', 'ioredis', 'pino'],
+  serverExternalPackages: ['@prisma/client', 'bullmq', 'ioredis', 'pino', 'nodemailer'],
   poweredByHeader: false,
   async headers() {
     return [

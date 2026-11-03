@@ -1,6 +1,6 @@
 import { prisma } from '@nexus/db';
 import { confirmSchema, editAnnouncementSchema } from '@nexus/shared';
-import { route, body, HttpError, notFound } from '@/lib/server/route';
+import { HttpError, body, notFound, routeAs } from '@/lib/server/route';
 import { queues, scheduleJobId } from '@/lib/server/queue';
 import { audit } from '@/lib/server/audit';
 
@@ -18,7 +18,7 @@ async function load(id: string) {
   );
 }
 
-export const GET = route(async (_req, { params }) => {
+export const GET = routeAs('EDITOR', async (_req, { params }) => {
   const a = await load(params.id!);
   const run = Math.max(0, ...a.targets.flatMap((t) => t.deliveries.map((d) => d.run)));
   return {
@@ -44,7 +44,7 @@ export const GET = route(async (_req, { params }) => {
 });
 
 /** Edit content everywhere. confirmCount must equal the number of SENT messages. */
-export const PATCH = route(async (req, { params, actor }) => {
+export const PATCH = routeAs('EDITOR', async (req, { params, actor }) => {
   const raw = await body(req);
   const { content } = editAnnouncementSchema.parse(raw);
   const { confirmCount } = confirmSchema.parse(raw);
@@ -57,7 +57,7 @@ export const PATCH = route(async (req, { params, actor }) => {
 });
 
 /** Delete everywhere + cancel any schedule. */
-export const DELETE = route(async (req, { params, actor }) => {
+export const DELETE = routeAs('EDITOR', async (req, { params, actor }) => {
   const { confirmCount } = confirmSchema.parse(await body(req));
   const a = await load(params.id!);
   const sent = a.targets.reduce((n, t) => n + t.deliveries.filter((d) => d.status === 'SENT').length, 0);

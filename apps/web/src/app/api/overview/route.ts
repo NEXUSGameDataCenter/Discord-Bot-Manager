@@ -1,9 +1,9 @@
 import { prisma } from '@nexus/db';
-import { route } from '@/lib/server/route';
+import { routeAs } from '@/lib/server/route';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = route(async () => {
+export const GET = routeAs('EDITOR', async () => {
   const since7 = new Date(Date.now() - 7 * 864e5);
   const since30 = new Date(Date.now() - 30 * 864e5);
   const [bots, guilds, sent30, failed7, sentRows, recent] = await Promise.all([

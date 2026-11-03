@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { prisma } from '@nexus/db';
 import { ATTACHMENT_MAX_BYTES, IMAGE_MAX_BYTES, IMAGE_MIME } from '@nexus/shared';
-import { route, HttpError } from '@/lib/server/route';
+import { HttpError, routeAs } from '@/lib/server/route';
 import { assetStore } from '@/lib/server/env';
 
 export const runtime = 'nodejs';
@@ -17,7 +17,7 @@ function sniffImage(b: Buffer): string | null {
 }
 const EXT: Record<string, string> = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/gif': '.gif', 'image/webp': '.webp' };
 
-export const POST = route(async (req) => {
+export const POST = routeAs('EDITOR', async (req) => {
   const form = await req.formData();
   const kind = form.get('kind');
   const file = form.get('file');

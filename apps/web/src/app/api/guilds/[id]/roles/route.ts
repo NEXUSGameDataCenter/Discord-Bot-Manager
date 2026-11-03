@@ -1,9 +1,9 @@
 import { prisma } from '@nexus/db';
-import { route } from '@/lib/server/route';
+import { routeAs } from '@/lib/server/route';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = route(async (_req, { params }) => ({
+export const GET = routeAs('EDITOR', async (_req, { params }) => ({
   roles: await prisma.role.findMany({
     where: { guildRefId: params.id!, NOT: { name: '@everyone' } },
     orderBy: { position: 'desc' },

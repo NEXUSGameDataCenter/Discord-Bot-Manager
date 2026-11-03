@@ -1,13 +1,13 @@
 import { prisma } from '@nexus/db';
 import { roleMenuSchema } from '@nexus/shared';
-import { route, body } from '@/lib/server/route';
+import { body, route, routeAs } from '@/lib/server/route';
 import { validateMenu } from '@/lib/server/roleMenus';
 import { queues } from '@/lib/server/queue';
 import { audit } from '@/lib/server/audit';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = route(async (req) => {
+export const GET = routeAs('EDITOR', async (req) => {
   const guildRefId = new URL(req.url).searchParams.get('guildRefId');
   return { menus: guildRefId ? await prisma.roleMenu.findMany({ where: { guildRefId }, orderBy: { createdAt: 'desc' } }) : [] };
 });

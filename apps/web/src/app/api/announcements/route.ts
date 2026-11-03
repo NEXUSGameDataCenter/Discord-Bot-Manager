@@ -1,12 +1,12 @@
 import { prisma } from '@nexus/db';
 import { createAnnouncementSchema } from '@nexus/shared';
-import { route, body, HttpError } from '@/lib/server/route';
+import { HttpError, body, routeAs } from '@/lib/server/route';
 import { queues, scheduleJobId } from '@/lib/server/queue';
 import { audit } from '@/lib/server/audit';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = route(async () => {
+export const GET = routeAs('EDITOR', async () => {
   const anns = await prisma.announcement.findMany({
     orderBy: { createdAt: 'desc' },
     take: 50,
@@ -35,7 +35,7 @@ export const GET = route(async () => {
   };
 });
 
-export const POST = route(async (req, { actor }) => {
+export const POST = routeAs('EDITOR', async (req, { actor }) => {
   const input = createAnnouncementSchema.parse(await body(req));
   const bot = await prisma.bot.findUnique({ where: { id: input.botId }, select: { id: true } });
   if (!bot) throw new HttpError(400, 'Bot not found');

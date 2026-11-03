@@ -51,7 +51,7 @@ for (const f of files.filter((f) => /\/app\/.*\/route\.ts$/.test(f))) {
   const src = fs.readFileSync(f, 'utf8');
   for (const m of src.matchAll(/export\s+(?:const|async function|function)\s+(\w+)/g)) if (!allowed.has(m[1])) fail(`${path.relative(root, f)} exports non-route name ${m[1]}`);
   for (const m of src.matchAll(/export\s+const\s+\{([^}]+)\}/g)) for (const n of m[1].split(',').map((s) => s.trim())) if (!allowed.has(n)) fail(`${path.relative(root, f)} exports ${n}`);
-  if (!/route\(|requireAdmin\(|handlers/.test(src)) fail(`${path.relative(root, f)} has no auth guard`);
+  if (!/route\(|routeAs\(|requireUser\(|handlers/.test(src)) fail(`${path.relative(root, f)} has no auth guard`);
 }
 console.log(`[4] route files: ${routes} checked (exports + auth guard)`);
 

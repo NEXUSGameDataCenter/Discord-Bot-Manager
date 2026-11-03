@@ -1,11 +1,11 @@
 import { prisma } from '@nexus/db';
-import { route } from '@/lib/server/route';
+import { routeAs } from '@/lib/server/route';
 import { redis } from '@/lib/server/queue';
 import { serverEnv } from '@/lib/server/env';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = route(async () => {
+export const GET = routeAs('EDITOR', async () => {
   const check = async (fn: () => Promise<unknown>) => {
     try {
       await fn();

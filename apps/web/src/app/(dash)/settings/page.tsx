@@ -12,7 +12,7 @@ export default function SettingsPage() {
       <PageHead crumb="SETTINGS" title="Settings" sub="ตั้งค่าความปลอดภัยและโครงสร้างระบบ" />
       <section className="card">
         <h3>Security &amp; Authentication</h3>
-        {[['Discord OAuth2 (Auth.js)', 'Enabled'], ['Admin ID allow-list (ADMIN_DISCORD_IDS)', 'Active'], ['Bot token encryption (AES-256-GCM)', 'Enabled'], ['Tokens never sent to browser', 'Active'], ['Gateway intents', 'Guilds only']].map(([k, v]) => (
+        {[['Invite-only email sign-in (single-use links)', 'Enabled'], ['Roles: Owner / Admin / Editor', 'Active'], ['Bot token encryption (AES-256-GCM)', 'Enabled'], ['Tokens never sent to browser', 'Active'], ['Gateway intents', 'Guilds, Members, Messages, Reactions']].map(([k, v]) => (
           <div className="switchline" key={k} style={{ padding: '8px 0' }}><span>{k}</span><span className="status success">{v}</span></div>
         ))}
       </section>

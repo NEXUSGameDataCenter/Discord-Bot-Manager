@@ -1,12 +1,12 @@
 import { prisma } from '@nexus/db';
 import { profileSchema } from '@nexus/shared';
-import { route, body, notFound, HttpError } from '@/lib/server/route';
+import { HttpError, body, notFound, route, routeAs } from '@/lib/server/route';
 import { queues, RETRY_OPTS } from '@/lib/server/queue';
 import { audit } from '@/lib/server/audit';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = route(async (_req, { params }) => {
+export const GET = routeAs('EDITOR', async (_req, { params }) => {
   const g = (await prisma.guild.findUnique({ where: { id: params.guildRefId! }, include: { profile: true } })) ?? notFound('Server not found');
   return { guild: { id: g.id, name: g.name, liveNick: g.liveNick, missingPerms: g.missingPerms }, profile: g.profile };
 });

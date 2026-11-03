@@ -1,7 +1,7 @@
 import { prisma } from '@nexus/db';
 import { addBotSchema, inviteUrl, inviteBitfield, REQUIRED_PERMISSIONS } from '@nexus/shared';
 import { encrypt } from '@nexus/shared/crypto';
-import { route, body, HttpError } from '@/lib/server/route';
+import { HttpError, body, route, routeAs } from '@/lib/server/route';
 import { queues } from '@/lib/server/queue';
 import { serverEnv } from '@/lib/server/env';
 import { audit } from '@/lib/server/audit';
@@ -23,7 +23,7 @@ const botSelect = {
   _count: { select: { guilds: { where: { present: true } } } },
 } as const;
 
-export const GET = route(async () => {
+export const GET = routeAs('EDITOR', async () => {
   const bots = await prisma.bot.findMany({ select: botSelect, orderBy: { createdAt: 'asc' } });
   return {
     bots: bots.map((b) => ({ ...b, guildCount: b._count.guilds, inviteUrl: inviteUrl(b.applicationId) })),
