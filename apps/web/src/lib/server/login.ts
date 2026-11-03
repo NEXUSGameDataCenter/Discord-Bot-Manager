@@ -25,9 +25,12 @@ export async function requestLogin(rawEmail: string): Promise<void> {
   try {
     await sendMail(email, linkEmail('login', url));
   } catch (err) {
-    if (err instanceof NoEmailProvider && member.role === 'OWNER') {
-      // Bootstrap only: lets the owner in before email is configured. Visible to Railway project members only.
-      logger.warn({ email, url }, 'OWNER sign-in link (email not configured — set RESEND_API_KEY or SMTP_URL to stop this)');
+    if (member.role === 'OWNER') {
+      // Owner fallback: never lock the owner out because email is missing or broken. Visible to Railway project members only.
+      logger.warn(
+        { email, url, reason: err instanceof NoEmailProvider ? 'not configured' : err instanceof Error ? err.message : String(err) },
+        'OWNER sign-in link (email could not be sent)',
+      );
       return;
     }
     logger.error({ email, err: err instanceof Error ? err.message : String(err) }, 'sign-in email failed');
