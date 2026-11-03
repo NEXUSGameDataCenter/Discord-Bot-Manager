@@ -81,6 +81,22 @@ route ของ Next.js export เฉพาะชื่อที่อนุญ�
 หมายเหตุ: auto-deploy จาก GitHub ไม่ทำงานรอบแรกเพราะชื่อ repo เปลี่ยนตัวพิมพ์ แก้แล้วโดยผูก source ใหม่เป็น `NEXUSGameDataCenter/Discord-Bot-Manager`
 ยังไม่ทดสอบกับ Discord จริง (ต้องตั้ง OAuth + เปิด Server Members Intent) → HUMAN_REVIEW.md หมวด J
 
+
+## ✅ เฟส 3 — Email sign-in + Team + My Profile (commit 0f102c6)
+
+| ตรวจ | ผล |
+|---|---|
+| Unit tests `packages/shared` | ✅ 44 passed (+3: ลำดับสิทธิ์, normalise อีเมลเชิญ/ห้ามเชิญ OWNER, profile/patch schema) |
+| Typecheck strict `packages/shared` | ✅ 0 errors |
+| Static checks: 36 route files มี role guard ทุกไฟล์ (27 EDITOR, 4 OWNER, ที่เหลือ ADMIN) | ✅ |
+| `next build` + start บน Railway, healthcheck `/login` | ✅ SUCCESS |
+| `prisma db push` → TeamMember, MagicToken ใน schema `nexus` | ✅ ยืนยันด้วย SQL |
+
+ออกแบบด้านความปลอดภัย: เก็บเฉพาะ SHA-256 ของ token, ใช้ได้ครั้งเดียว (race-safe), login 15 นาที / invite 7 วัน,
+จำกัด 5 ลิงก์ต่ออีเมลต่อ 15 นาที, หน้า login ตอบเหมือนกันทุกกรณี (ไม่บอกว่าอีเมลอยู่ในทีมไหม),
+ลิงก์ต้องกดปุ่ม (POST) กันระบบสแกนอีเมลใช้ token ไปก่อน, สิทธิ์และสถานะอ่านจาก DB ทุก request
+ยังไม่ได้ทดสอบส่งอีเมลจริง (ยังไม่ได้ตั้ง SMTP_URL / RESEND_API_KEY) → HUMAN_REVIEW.md หมวด K
+
 ## ⏳ ยังไม่ได้รัน (ต้องมี dependencies) — คำสั่งสำหรับรันบนเครื่องคุณ
 
 ```bash
