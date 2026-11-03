@@ -21,3 +21,14 @@ describe('team roles', () => {
     expect(memberPatchSchema.safeParse({ status: 'DISABLED' }).success).toBe(true);
   });
 });
+
+import { accessRequestSchema, changePasswordSchema } from '../src';
+describe('access request', () => {
+  it('requires name, valid email and an 8+ char password', () => {
+    expect(accessRequestSchema.safeParse({ name: 'A', email: 'a@b.co', password: 'short' }).success).toBe(false);
+    expect(accessRequestSchema.safeParse({ name: '', email: 'a@b.co', password: 'longenough' }).success).toBe(false);
+    const ok = accessRequestSchema.safeParse({ name: ' Ann ', email: 'Ann@B.co', password: 'longenough' });
+    expect(ok.success && ok.data.email).toBe('ann@b.co');
+    expect(changePasswordSchema.safeParse({ next: '12345678' }).success).toBe(true);
+  });
+});

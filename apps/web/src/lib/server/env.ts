@@ -12,14 +12,10 @@ const schema = z.object({
   ASSET_BUCKET: z.string().default('nexus-assets'),
   BOT_HEALTH_URL: z.string().url().optional(),
   AUTH_SECRET: z.string().min(16),
-  /** Public base URL, used in email links */
+  /** Public base URL, used in invite links */
   AUTH_URL: z.string().url(),
-  /** First owner. Can always request a sign-in link, even before anyone is invited. */
+  /** First owner. Can always get a recovery sign-in link written to the web log. */
   OWNER_EMAIL: z.string().trim().toLowerCase().email().optional(),
-  /** Email: set RESEND_API_KEY or SMTP_URL (e.g. smtps://user:app-password@smtp.gmail.com:465) */
-  RESEND_API_KEY: z.string().min(10).optional(),
-  SMTP_URL: z.string().min(10).optional(),
-  EMAIL_FROM: z.string().default('Nexus Bot Control <onboarding@resend.dev>'),
 });
 
 let cached: z.infer<typeof schema> | undefined;

@@ -43,7 +43,7 @@ export default function ReactionRolesPage() {
 
   return (
     <>
-      <PageHead crumb="REACTION ROLES" title="Reaction Roles" sub="ให้สมาชิกเลือก role เองด้วยปุ่มหรือ emoji" action={guildRefId && !edit ? <button onClick={() => setEdit(blank(guildRefId))}>＋ New menu</button> : undefined} />
+      <PageHead crumb="REACTION ROLES" title="Reaction Roles" action={guildRefId && !edit ? <button onClick={() => setEdit(blank(guildRefId))}>＋ New menu</button> : undefined} />
       <section className="card" style={{ marginBottom: 14 }}><GuildSelect value={guildRefId} onChange={(id) => { setGuild(id); setEdit(null); }} /></section>
 
       {edit && (

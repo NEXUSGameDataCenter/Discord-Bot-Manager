@@ -7,13 +7,14 @@ async function target(id: string, selfId: string) {
   const m = (await prisma.teamMember.findUnique({ where: { id } })) ?? notFound('ไม่พบสมาชิก');
   if (m.id === selfId) throw new HttpError(400, 'แก้ไขสิทธิ์ของตัวเองไม่ได้');
   if (m.role === 'OWNER') throw new HttpError(400, 'แก้ไขหรือลบ Owner ไม่ได้');
+  if (m.status === 'PENDING') throw new HttpError(400, 'นี่คือคำขอที่รออนุมัติ — ใช้ปุ่มอนุมัติหรือปฏิเสธ');
   return m;
 }
 
 export const PATCH = routeAs('OWNER', async (req, { params, member, actor }) => {
   const input = memberPatchSchema.parse(await body(req));
   const m = await target(params.id!, member.id);
-  const status = input.status === 'DISABLED' ? 'DISABLED' : input.status === 'ENABLED' ? (m.lastLogin ? 'ACTIVE' : 'INVITED') : undefined;
+  const status = input.status === 'DISABLED' ? 'DISABLED' : input.status === 'ENABLED' ? (m.lastLogin || m.passwordHash ? 'ACTIVE' : 'INVITED') : undefined;
   await prisma.teamMember.update({ where: { id: m.id }, data: { role: input.role, status } });
   await audit(actor, 'team.update', { email: m.email }, 'success', input);
   return { ok: true };

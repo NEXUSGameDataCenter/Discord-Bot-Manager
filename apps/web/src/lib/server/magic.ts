@@ -12,16 +12,24 @@ export async function createToken(email: string, purpose: keyof typeof TTL): Pro
   return token;
 }
 
+/** Look up without using it (to show the right form on the link page). */
+export async function peekToken(token: string) {
+  if (!/^[A-Za-z0-9_-]{40,64}$/.test(token)) return null;
+  const row = await prisma.magicToken.findUnique({ where: { tokenHash: hash(token) } });
+  if (!row || row.usedAt || row.expiresAt < new Date()) return null;
+  return row;
+}
+
 /** Single use, race-safe. Activates an invited member. Returns null for any invalid/expired/used/disabled case. */
-export async function consumeToken(token: string) {
+export async function consumeToken(token: string, extra: { name?: string; passwordHash?: string } = {}) {
   if (!/^[A-Za-z0-9_-]{40,64}$/.test(token)) return null;
   const row = await prisma.magicToken.findUnique({ where: { tokenHash: hash(token) } });
   if (!row || row.usedAt || row.expiresAt < new Date()) return null;
   const claimed = await prisma.magicToken.updateMany({ where: { id: row.id, usedAt: null }, data: { usedAt: new Date() } });
   if (claimed.count !== 1) return null;
   const member = await prisma.teamMember.findUnique({ where: { email: row.email } });
-  if (!member || member.status === 'DISABLED') return null;
-  return prisma.teamMember.update({ where: { id: member.id }, data: { status: 'ACTIVE', lastLogin: new Date() } });
+  if (!member || member.status === 'DISABLED' || member.status === 'PENDING') return null;
+  return prisma.teamMember.update({ where: { id: member.id }, data: { status: 'ACTIVE', lastLogin: new Date(), ...extra } });
 }
 
 export async function recentTokens(email: string, minutes = 15): Promise<number> {

@@ -6,7 +6,7 @@ import { audit } from '@/lib/server/audit';
 export const dynamic = 'force-dynamic';
 
 export const GET = routeAs('EDITOR', async (_req, { member }) => ({
-  me: { id: member.id, email: member.email, name: member.name, avatarAssetId: member.avatarAssetId, role: member.role, lastLogin: member.lastLogin },
+  me: { id: member.id, email: member.email, name: member.name, avatarAssetId: member.avatarAssetId, role: member.role, lastLogin: member.lastLogin, hasPassword: !!member.passwordHash },
 }));
 
 /** Everyone edits only their own display name and avatar. Email and role are not editable here. */

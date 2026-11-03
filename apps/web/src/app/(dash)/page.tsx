@@ -19,7 +19,9 @@ export default function OverviewPage() {
   const max = Math.max(1, ...(data?.activity.map((a) => a.count) ?? [1]));
   return (
     <>
-      <PageHead crumb="OVERVIEW" title="ภาพรวมระบบ" sub="สถานะการทำงานของ Discord Bots ทั้งหมด" />
+      <div className="herobanner" role="img" aria-label="Nexus">
+        <div className="herotext"><strong>Nexus Manager</strong><small>ภาพรวมของ Bot, เซิร์ฟเวอร์ และการส่งประกาศ</small></div>
+      </div>
       <ErrorBox error={error} />
       {!data ? (
         <Loading rows={4} />

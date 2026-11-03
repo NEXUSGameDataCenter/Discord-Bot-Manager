@@ -38,7 +38,7 @@ export default function PresetsPage() {
 
   return (
     <>
-      <PageHead crumb="PRESETS" title="Profile Presets" sub="จัดการรูปแบบโปรไฟล์และ Bulk Apply · สร้าง Preset ได้จากหน้า Server Profiles → Save as Preset" />
+      <PageHead crumb="PRESETS" title="Profile Presets" />
       <ErrorBox error={error} />
       {loading && !data ? <Loading /> : !data?.presets.length ? <Empty>ยังไม่มี Preset</Empty> : null}
       <div className="grid">

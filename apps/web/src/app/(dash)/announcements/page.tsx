@@ -126,7 +126,7 @@ export default function AnnouncementsPage() {
 
   return (
     <>
-      <PageHead crumb="ANNOUNCEMENTS" title="Announcements" sub="สร้างและส่งประกาศไปยังหลายเซิร์ฟเวอร์" />
+      <PageHead crumb="ANNOUNCEMENTS" title="Announcements" />
       <div className="stepper">
         {['1. Compose', '2. Target', '3. Review'].map((x, i) => (
           <div key={x} className={`step ${step === i + 1 ? 'active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setStep(i + 1)}>{x}</div>
@@ -176,7 +176,10 @@ export default function AnnouncementsPage() {
                 <button className="secondary small" onClick={() => setContent(`@here\n${content}`)}>ใส่ @here</button>
               </div>
             )}
-            <div className="notice">แท็ก @everyone / @here ต้องอยู่ใน <b>ข้อความ (Message Content)</b> เท่านั้น — ถ้าอยู่ใน Embed จะไม่ ping · Mention ทุกประเภทถูกปิดโดยค่าเริ่มต้น (allowedMentions ถูกตั้งค่าเสมอ) · Role ping ใช้ได้เฉพาะ Role ID ที่ใส่ใน Override ของแต่ละ Server</div>
+            <details className="more">
+              <summary>รายละเอียดเรื่อง mention</summary>
+              <div className="notice">แท็ก @everyone / @here ต้องอยู่ใน <b>ข้อความ (Message Content)</b> เท่านั้น — ถ้าอยู่ใน Embed จะไม่ ping · Mention ทุกประเภทถูกปิดโดยค่าเริ่มต้น · Role ping ใช้ Role ID ใน Override ของแต่ละ Server</div>
+            </details>
           </section>
           <div className="toolbar" style={{ justifyContent: 'space-between', marginTop: 14 }}>
             <button className="secondary" onClick={() => setStep(1)}>← Back</button>
@@ -288,6 +291,8 @@ function Composer(p: {
             <div className="field"><label>Color</label><input className="input" type="color" value={e.color} onChange={(x) => upd(i, { color: x.target.value })} /></div>
           </div>
           <div className="field"><label>Description</label><textarea maxLength={LIMITS.description} value={e.description} onChange={(x) => upd(i, { description: x.target.value })} /></div>
+          <details className="more">
+          <summary>ตัวเลือกเพิ่มเติม (author, รูป, footer, timestamp)</summary>
           <div className="inline">
             <div className="field"><label>Author name</label><input className="input" value={e.authorName} onChange={(x) => upd(i, { authorName: x.target.value })} /></div>
             <div className="field"><label>Author icon URL</label><input className="input" value={e.authorIcon} onChange={(x) => upd(i, { authorIcon: x.target.value })} /></div>
@@ -296,6 +301,7 @@ function Composer(p: {
             <div className="field"><label>Footer</label><input className="input" maxLength={LIMITS.footer} value={e.footer} onChange={(x) => upd(i, { footer: x.target.value })} /></div>
           </div>
           <label className="checkrow"><input type="checkbox" checked={e.timestamp} onChange={(x) => upd(i, { timestamp: x.target.checked })} /> Timestamp (เวลาที่ส่ง)</label>
+          </details>
           {e.fields.map((f, k) => (
             <div className="row" key={k}>
               <input className="input grow" placeholder="Field name" value={f.name} onChange={(x) => upd(i, { fields: e.fields.map((ff, kk) => (kk === k ? { ...ff, name: x.target.value } : ff)) })} />
@@ -336,7 +342,6 @@ function Composer(p: {
           {BUILTIN_VARIABLES.map((v) => <code key={v} style={{ marginRight: 6 }}>{v}</code>)} + ตัวแปรของแต่ละ Server เช่น <code>{'{event}'}</code> (ตั้งที่หน้า จัดการ Servers)
         </div>
       )}
-      <small className="sub">Message limit 2,000 · Combined embed limit 6,000 · Up to 10 embeds</small>
       {p.payloadErrors.length > 0 && <div className="err">{p.payloadErrors.join(' · ')}</div>}
     </section>
   );

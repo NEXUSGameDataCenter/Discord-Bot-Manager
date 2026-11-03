@@ -12,8 +12,8 @@
 
 | ☐ | ขั้นตอน | ใคร | ที่ไหน |
 |---|---|---|---|
-| ☐ | ตั้งค่าส่งอีเมล: `SMTP_URL` (Gmail App Password) หรือ `RESEND_API_KEY` + `EMAIL_FROM` ใน service **web** | 👤 | Railway → web → Variables |
-| ☐ | เชิญสมาชิกทีมจากหน้า **Team** และให้ทุกคนตั้งชื่อ/รูปที่ **My Profile** | 👤 | Dashboard |
+| ☐ | Owner ตั้งรหัสผ่านที่หน้า **My Profile** | 👤 | Dashboard |
+| ☐ | ให้ทีมกด **ขอเข้าร่วมทีม** แล้วอนุมัติในหน้า **Team** (หรือส่งลิงก์เชิญ) | 👤 | Dashboard |
 | ☐ | คัดลอก `service_role` key แล้วตั้ง `SUPABASE_SERVICE_ROLE_KEY` ใน **web** และ **bot** (ถ้าไม่ตั้ง รูป/ไฟล์แนบจะหายทุกครั้งที่ redeploy) | 👤 | Supabase → Project Settings → API Keys |
 | ☐ | Bot application: เปิด **Server Members Intent** (ไม่ต้องเปิด Message Content) | 👤 | Developer Portal → Bot → Privileged Gateway Intents |
 | ☐ | Login เข้า Dashboard → **จัดการ Bots → Add Bot** วาง bot token | 👤 | Dashboard |

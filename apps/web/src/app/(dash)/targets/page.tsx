@@ -35,7 +35,7 @@ export default function TargetsPage() {
 
   return (
     <>
-      <PageHead crumb="TARGETS" title="Target Groups" sub="กลุ่มปลายทางที่สามารถนำกลับมาใช้ซ้ำได้ · ใช้ห้องประกาศเริ่มต้นของแต่ละ Server · Override ต่อ Server ตั้งได้ในขั้น Target ของการประกาศ" />
+      <PageHead crumb="TARGETS" title="Target Groups" />
       <ErrorBox error={error} />
       {loading && !data ? <Loading /> : !data?.groups.length ? <Empty>ยังไม่มีกลุ่ม</Empty> : null}
       <div className="grid">

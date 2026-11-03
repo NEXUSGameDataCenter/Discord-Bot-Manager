@@ -47,19 +47,13 @@ export function Shell({ user, children }: { user: ShellUser; children: React.Rea
       <div className="app">
         <header className="topbar">
           <button className="secondary mobile-toggle" onClick={() => setOpen(!open)} aria-label="Menu">☰</button>
-          <div className="brandmark">✦</div>
+          <img src="/logo.png" alt="" className="toplogo" width={40} height={40} />
           <div className="brand">NEXUS<small>BOT CONTROL CENTER</small></div>
           <div className="top-spacer" />
-          <span className="pill" style={online ? undefined : { background: '#452432', color: '#fda4af' }}>● {online ? 'SYSTEM ONLINE' : 'NO BOT ONLINE'}</span>
+          <span className="pill" title={online ? 'Bot online' : 'No bot online'} style={online ? undefined : { background: '#452432', color: '#fda4af' }}>●<span className="hide-mobile">&nbsp;{online ? 'ONLINE' : 'OFFLINE'}</span></span>
         </header>
         <div className="layout">
           <aside className={open ? 'open' : ''}>
-            <div className="workspace">
-              <div className="eyebrow">ACTIVE WORKSPACE</div>
-              <strong>◈ &nbsp; Nexus Workspace</strong>
-              <br />
-              <small>{user.role}</small>
-            </div>
             <div>
               {groups.map((g) => ({ ...g, items: g.items.filter((i) => hasRole(user.role, i[3])) })).filter((g) => g.items.length).map((g) => (
                 <div className="navgroup" key={g.label}>
@@ -73,13 +67,6 @@ export function Shell({ user, children }: { user: ShellUser; children: React.Rea
                   ))}
                 </div>
               ))}
-            </div>
-            <div className="security">
-              <strong>◈ SECURITY STATUS</strong>
-              <br />
-              <span style={{ color: '#6ee7b7' }}>● Invite-only email sign-in</span>
-              <br />
-              <small>Tokens encrypted · AES-256-GCM</small>
             </div>
             <div className="admin">
               <Link href="/me" className="avatar" style={{ overflow: 'hidden' }} title="My Profile">
@@ -100,14 +87,14 @@ export function Shell({ user, children }: { user: ShellUser; children: React.Rea
   );
 }
 
-export function PageHead({ crumb, title, sub, action }: { crumb: string; title: string; sub: string; action?: React.ReactNode }) {
+export function PageHead({ crumb, title, sub, action }: { crumb: string; title: string; sub?: string; action?: React.ReactNode }) {
   return (
     <>
-      <div className="crumb">NEXUS / CONTROL PANEL / {crumb}</div>
+      <div className="crumb">{crumb}</div>
       <div className="pagehead">
         <div>
           <h1>{title}</h1>
-          <p>{sub}</p>
+          {sub && <p>{sub}</p>}
         </div>
         {action}
       </div>

@@ -60,15 +60,15 @@ export default function BotsPage() {
 
   return (
     <>
-      <PageHead crumb="BOTS" title="จัดการ Bots" sub="ควบคุม Bot instances และ Gateway connections" />
-      <section className="card" style={{ marginBottom: 14 }}>
-        <h3>＋ Add Bot</h3>
-        <p className="sub">วาง Bot token จาก Discord Developer Portal → Bot → Reset Token ระบบจะตรวจสอบกับ GET /users/@me ก่อนบันทึก และเข้ารหัสด้วย AES-256-GCM (token จะไม่ถูกส่งกลับมาที่เบราว์เซอร์)</p>
+      <PageHead crumb="BOTS" title="จัดการ Bots" />
+      <details className="more card" style={{ marginBottom: 14 }} open={!!data && !data.bots.length}>
+        <summary>＋ Add Bot</summary>
+        <p className="sub">วาง Bot token จาก Developer Portal → Bot → Reset Token (เข้ารหัสเก็บ ไม่ส่งกลับมาที่เบราว์เซอร์)</p>
         <div className="row">
           <input className="input grow" type="password" autoComplete="off" placeholder="Bot token" value={token} onChange={(e) => setToken(e.target.value)} />
           <button disabled={adding || token.trim().length < 50} onClick={addBot}>{adding ? 'Validating…' : 'Validate & Add'}</button>
         </div>
-      </section>
+      </details>
       <ErrorBox error={error} />
       {loading && !data ? <Loading /> : !data?.bots.length ? <Empty>ยังไม่มี Bot</Empty> : null}
       <div className="grid">
@@ -78,7 +78,7 @@ export default function BotsPage() {
               <div className="boticon">{b.avatarUrl ? <img src={b.avatarUrl} alt="" /> : '♟'}</div>
               <div className="grow">
                 <strong>{b.username}</strong>
-                <small>App ID: {b.applicationId}</small>
+                <small>{b.guildCount} servers</small>
               </div>
               <span className={`status ${statusClass(b.status)}`}>{b.status}</span>
             </div>
@@ -95,26 +95,33 @@ export default function BotsPage() {
                 <button className="secondary small" onClick={() => act(b, 'start')}>▶ Start</button>
               )}
               <button className="secondary small" onClick={() => act(b, 'restart')}>↻ Restart</button>
-              <button className="secondary small" onClick={() => { navigator.clipboard.writeText(b.inviteUrl); toast('คัดลอก Invite URL แล้ว'); }}>⧉ Copy Invite URL</button>
               <a href={b.inviteUrl} target="_blank" rel="noreferrer"><button className="secondary small">↗ Invite</button></a>
-              <button className="secondary small" onClick={() => setEditing(b)}>Edit Global Profile</button>
-              <button className="danger small" onClick={() => remove(b)}>Remove</button>
+              <details className="more menu">
+                <summary aria-label="More">⋯</summary>
+                <div className="menupanel">
+                  <button className="secondary small" onClick={() => { navigator.clipboard.writeText(b.inviteUrl).then(() => toast('คัดลอก Invite URL แล้ว'), () => toast('คัดลอกไม่ได้', true)); }}>⧉ Copy Invite URL</button>
+                  <button className="secondary small" onClick={() => setEditing(b)}>Edit Global Profile</button>
+                  <small className="muted">App ID {b.applicationId}</small>
+                  <button className="danger small" onClick={() => remove(b)}>Remove</button>
+                </div>
+              </details>
             </div>
           </section>
         ))}
       </div>
       {editing && <GlobalEditor bot={editing} onClose={() => setEditing(null)} />}
       {data && (
-        <section className="card" style={{ marginTop: 14 }}>
-          <h3>Invite Permissions · bitfield <code>{data.permissions.bitfield}</code></h3>
+        <details className="more card" style={{ marginTop: 14 }}>
+          <summary>สิทธิ์ที่ Bot ขอตอนเชิญ ({data.permissions.list.length})</summary>
+          <p className="sub">bitfield <code>{data.permissions.bitfield}</code></p>
           {data.permissions.list.map((p) => (
             <div className="switchline" key={p.name} style={{ padding: '6px 0' }}>
               <span>{p.name}</span>
               <small className="muted" style={{ textAlign: 'right' }}>{p.reason}</small>
             </div>
           ))}
-          <p className="sub">Gateway intent: <code>Guilds</code> เท่านั้น (ไม่มี privileged intents)</p>
-        </section>
+          <p className="sub">Intents: Guilds, Server Members, Messages, Reactions</p>
+        </details>
       )}
     </>
   );

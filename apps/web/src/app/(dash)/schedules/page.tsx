@@ -28,7 +28,7 @@ export default function SchedulesPage() {
   }
   return (
     <>
-      <PageHead crumb="SCHEDULES" title="Schedules" sub="ตั้งเวลาและจัดการประกาศอัตโนมัติ · สร้างได้จากขั้น Review ของ Announcements" />
+      <PageHead crumb="SCHEDULES" title="Schedules" />
       <ErrorBox error={error} />
       {loading && !data ? <Loading /> : !data?.schedules.length ? <Empty>ยังไม่มี Schedule</Empty> : null}
       <div className="grid">

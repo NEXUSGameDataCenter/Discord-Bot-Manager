@@ -71,7 +71,7 @@ function Profiles() {
 
   return (
     <>
-      <PageHead crumb="PROFILES" title="Server Profiles" sub="กำหนดตัวตนของ Bot แยกตามแต่ละ Server" />
+      <PageHead crumb="PROFILES" title="Server Profiles" />
       <ErrorBox error={guilds.error ?? prof.error} />
       <div className="split">
         <section className="card">
@@ -145,7 +145,10 @@ function Profiles() {
                   <button className="secondary" disabled={!p} onClick={save}>↻ Re-sync Profile</button>
                 </>
               )}
-              <div className="notice">Presence และ Activity เป็น Global ไม่สามารถตั้งค่าแยกตาม Server ได้ ส่วน Banner และ Bio ต้องตรวจสอบการแสดงผลบน Discord Client จริง</div>
+              <details className="more">
+                <summary>ข้อจำกัดของ Discord</summary>
+                <div className="notice">Presence และ Activity เป็น Global ไม่สามารถตั้งค่าแยกตาม Server ได้ ส่วน Banner และ Bio ต้องตรวจสอบการแสดงผลบน Discord Client จริง</div>
+              </details>
               <div className="row">
                 <button onClick={save}>Save &amp; Sync Profile</button>
                 <button className="secondary" onClick={saveAsPreset}>Save as Preset</button>

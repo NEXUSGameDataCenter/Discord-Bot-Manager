@@ -17,6 +17,7 @@ export const ROLE_LABEL: Record<TeamRole, string> = {
 
 export const emailSchema = z.string().trim().toLowerCase().email('อีเมลไม่ถูกต้อง').max(254);
 
+/** Owner-created invite: produces a link to share (no email is sent). */
 export const inviteSchema = z.object({ email: emailSchema, role: z.enum(['ADMIN', 'EDITOR']) });
 
 export const memberPatchSchema = z
@@ -27,3 +28,16 @@ export const meSchema = z.object({
   name: z.string().trim().min(1, 'ใส่ชื่อที่แสดง').max(40).nullable(),
   avatarAssetId: z.string().min(1).nullable(),
 });
+
+export const passwordSchema = z.string().min(8, 'รหัสผ่านอย่างน้อย 8 ตัวอักษร').max(128);
+
+export const accessRequestSchema = z.object({
+  name: z.string().trim().min(1, 'ใส่ชื่อ').max(40),
+  email: emailSchema,
+  password: passwordSchema,
+  note: z.string().trim().max(200).optional(),
+});
+
+export const approveSchema = z.object({ role: z.enum(['ADMIN', 'EDITOR']) });
+
+export const changePasswordSchema = z.object({ current: z.string().max(128).optional(), next: passwordSchema });

@@ -16,12 +16,15 @@ export default function WelcomePage() {
 
   return (
     <>
-      <PageHead crumb="WELCOME" title="Welcome & Auto roles" sub="ข้อความต้อนรับ, DM, บอกลา และแจก role อัตโนมัติเมื่อมีคนเข้าเซิร์ฟ" />
+      <PageHead crumb="WELCOME" title="Welcome & Auto roles" />
       <section className="card" style={{ marginBottom: 14 }}><GuildSelect value={guildRefId} onChange={setGuild} /></section>
       {!loaded ? <Loading /> : (
         <>
           {guild?.missingPerms.includes('ManageRoles') && <div className="notice">Bot ขาด Manage Roles — Auto roles จะไม่ทำงาน</div>}
-          <div className="notice" style={{ background: '#202d53', color: '#c7d2fe' }}>ต้องเปิด <b>Server Members Intent</b> ใน Developer Portal → Bot → Privileged Gateway Intents ก่อน · ตัวแปร: {MEMBER_VARIABLES.map((v) => <code key={v} style={{ marginRight: 4 }}>{v}</code>)}</div>
+          <details className="more">
+            <summary>ตัวแปรที่ใช้ได้ และสิ่งที่ต้องเปิดก่อน</summary>
+            <div className="notice" style={{ background: '#202d53', color: '#c7d2fe' }}>ต้องเปิด <b>Server Members Intent</b> ใน Developer Portal → Bot · ตัวแปร: {MEMBER_VARIABLES.map((v) => <code key={v} style={{ marginRight: 4 }}>{v}</code>)}</div>
+          </details>
           <div className="grid two">
             <div className="grid">
               <section className="card">
@@ -33,7 +36,7 @@ export default function WelcomePage() {
               <section className="card">
                 <div className="switchline"><h3>Join DM</h3><label className="checkrow"><input type="checkbox" checked={draft.welcomeDmEnabled} onChange={(e) => set('welcomeDmEnabled', e.target.checked)} /> เปิด</label></div>
                 <div className="field"><textarea maxLength={1500} value={draft.welcomeDmMessage} onChange={(e) => set('welcomeDmMessage', e.target.value)} /></div>
-                <small className="sub">สมาชิกที่ปิด DM จะไม่ได้รับ (ระบบข้ามให้เอง)</small>
+
               </section>
               <section className="card">
                 <div className="switchline"><h3>Goodbye message</h3><label className="checkrow"><input type="checkbox" checked={draft.goodbyeEnabled} onChange={(e) => set('goodbyeEnabled', e.target.checked)} /> เปิด</label></div>
@@ -43,7 +46,7 @@ export default function WelcomePage() {
             </div>
             <section className="card">
               <h3>Auto roles ({draft.autoRoles.length}/10)</h3>
-              <p className="sub">แจก role ทันทีหรือหลังเวลาที่กำหนด · role ที่สูงกว่า Bot จะเลือกไม่ได้</p>
+
               {draft.autoRoles.map((r, i) => (
                 <div className="targetrow" key={i}>
                   <div className="inline">

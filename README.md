@@ -29,11 +29,12 @@ Dashboard แบบ self-hosted สำหรับควบคุม Discord bot
 
 ## เข้าสู่ระบบ Dashboard
 
-- เข้าสู่ระบบด้วย**ลิงก์ทางอีเมล**เท่านั้น (ไม่มีรหัสผ่าน) และเฉพาะอีเมลที่ถูกเชิญ
-- `OWNER_EMAIL` คือ Owner คนแรก ขอลิงก์ได้เสมอ คนอื่นเชิญจากหน้า **Team**
+- เข้าสู่ระบบด้วย **อีเมล + รหัสผ่าน** ไม่มีการส่งอีเมล
+- คนใหม่กด **ขอเข้าร่วมทีม** ที่หน้า login (ตั้งชื่อ/รหัสผ่านเอง) แล้ว **Owner กดอนุมัติ** ในหน้า Team
+- หรือ Owner สร้าง **ลิงก์เชิญ** (ใช้ครั้งเดียว 7 วัน) ส่งให้ทาง Discord แล้วผู้รับตั้งรหัสผ่านเอง
 - สิทธิ์: **Owner** (จัดการทีม + ทุกอย่าง) · **Admin** (ทุกอย่างยกเว้นจัดการทีม) · **Editor** (ประกาศ/ตั้งเวลา/ดูข้อมูล)
-- แต่ละคนแก้ชื่อและรูปของตัวเองได้ที่หน้า **My Profile**
-- ตั้งค่าส่งอีเมล: `RESEND_API_KEY` หรือ `SMTP_URL` + `EMAIL_FROM` (ดู `.env.example`) — ถ้ายังไม่ตั้ง ลิงก์ของ Owner จะถูกเขียนใน log ของ service web แทน และหน้า Team มีปุ่มคัดลอกลิงก์เชิญให้ส่งเองได้
+- แต่ละคนแก้ชื่อ รูป และรหัสผ่านของตัวเองที่หน้า **My Profile**
+- `OWNER_EMAIL` ลืมรหัสผ่าน: หน้า login → "Owner ลืมรหัสผ่าน" → ลิงก์กู้คืนจะอยู่ใน log ของ service web (ค้นหา `OWNER sign-in link`)
 
 ## 2. รับ Bot Token
 
@@ -70,11 +71,10 @@ cp .env.example .env
 #   ENCRYPTION_KEY=$(openssl rand -hex 32)
 #   AUTH_SECRET=$(openssl rand -base64 32)
 #   OWNER_EMAIL=<อีเมลของคุณ>
-#   SMTP_URL หรือ RESEND_API_KEY + EMAIL_FROM
 docker compose up --build
 ```
 
-เปิด <http://localhost:3000> → ใส่ OWNER_EMAIL → กดลิงก์ในอีเมล → เพิ่ม Bot → Invite เข้า Server → ไปที่ **Announcements**
+เปิด <http://localhost:3000> → "Owner ลืมรหัสผ่าน" → เปิดลิงก์จาก log → ตั้งรหัสผ่านที่ My Profile → เพิ่ม Bot → Invite เข้า Server → ไปที่ **Announcements**
 
 รันแบบ dev (ไม่ใช้ docker สำหรับแอป):
 

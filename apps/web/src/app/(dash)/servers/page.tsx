@@ -62,7 +62,7 @@ export default function ServersPage() {
 
   return (
     <>
-      <PageHead crumb="SERVERS" title="จัดการ Servers" sub="ภาพรวมเซิร์ฟเวอร์และ Permission Health" />
+      <PageHead crumb="SERVERS" title="จัดการ Servers" />
       <div className="toolbar">
         <div style={{ minWidth: 220 }}><BotPicker value={botId} onChange={setBotId} /></div>
         <input className="input grow" placeholder="Search server name..." value={q} onChange={(e) => setQ(e.target.value)} />
@@ -87,16 +87,19 @@ export default function ServersPage() {
               {g.profileStatus && <span className={`status ${statusClass(g.profileStatus)}`}>Profile {g.profileStatus}</span>}
               <span className={`status ${g.missingPerms.length ? 'warning' : 'success'}`}>{g.missingPerms.length ? 'Issues' : 'Healthy'}</span>
             </div>
-            {g.missingPerms.length ? (
-              <div className="notice">
-                {g.missingPerms.map((p) => (
-                  <div key={p.name}>⚠ ขาด <b>{p.name}</b> — {p.fix}</div>
-                ))}
-              </div>
-            ) : (
-              <div className="sub">All permissions granted</div>
+            {g.missingPerms.length > 0 && (
+              <details className="more">
+                <summary>⚠ ขาดสิทธิ์ {g.missingPerms.length} รายการ — ดูวิธีแก้</summary>
+                <div className="notice">
+                  {g.missingPerms.map((p) => (
+                    <div key={p.name}>ขาด <b>{p.name}</b> — {p.fix}</div>
+                  ))}
+                </div>
+              </details>
             )}
             {g.profileError && <div className="err">Profile sync: {g.profileError}</div>}
+            <details className="more">
+            <summary>ตั้งค่าเซิร์ฟเวอร์</summary>
             <div className="field">
               <label>Default announcement channel</label>
               <select value={g.defaultChannelId ?? ''} onChange={(e) => setDefault(g, e.target.value)}>
@@ -109,6 +112,7 @@ export default function ServersPage() {
             <details>
               <summary>Custom template variables ({Object.keys(g.customVars ?? {}).length})</summary>
               <VarsEditor g={g} onSave={(t) => saveVars(g, t)} />
+            </details>
             </details>
             <div className="toolbar" style={{ margin: '10px 0 0' }}>
               <Link href={`/profiles?guild=${g.id}`}><button className="secondary small">Manage Profile</button></Link>

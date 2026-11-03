@@ -339,12 +339,14 @@ enum TeamRole {
 }
 
 enum MemberStatus {
+  /// Asked to join from the Request access page, waiting for the Owner
+  PENDING
   INVITED
   ACTIVE
   DISABLED
 }
 
-/// Dashboard user. Sign-in is by email link; only invited emails can sign in.
+/// Dashboard user. Sign-in is email + password; only members approved by the Owner can sign in.
 model TeamMember {
   id            String       @id @default(cuid())
   /// Always stored lowercase
@@ -354,12 +356,16 @@ model TeamMember {
   role          TeamRole     @default(EDITOR)
   status        MemberStatus @default(INVITED)
   invitedBy     String?
+  /// scrypt hash "scrypt$N$salt$hash"; null until the member sets a password
+  passwordHash  String?
+  /// Note written by the person when requesting access
+  requestNote   String?
   lastLogin     DateTime?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
 
-/// Single-use sign-in / invite link. Only the SHA-256 hash of the token is stored.
+/// Single-use invite link or owner recovery link. Only the SHA-256 hash of the token is stored.
 model MagicToken {
   id        String    @id @default(cuid())
   tokenHash String    @unique
