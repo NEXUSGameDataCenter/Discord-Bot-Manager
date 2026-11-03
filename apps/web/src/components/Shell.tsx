@@ -101,7 +101,7 @@ export function Shell({ user, children }: { user: ShellUser; children: React.Rea
             <Link href="/me" className="me" title={user.name}>{avatar(36)}</Link>
           </div>
         </header>
-        <div className={`bar ${compact ? 'show' : ''}`} aria-hidden={!compact}>
+        <div className={`minibar ${compact ? 'show' : ''}`} aria-hidden={!compact}>
           <button className="secondary mobile-toggle small" onClick={() => setOpen(!open)} aria-label="Menu" tabIndex={compact ? 0 : -1}>☰</button>
           <img src="/logo.png" alt="" width={30} height={30} />
           <b>NEXUS</b>

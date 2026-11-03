@@ -65,7 +65,7 @@ body{font-family:var(--body)}
   animation:breathe 4.8s ease-in-out infinite}
 .hero-inner{height:100%;display:flex;align-items:flex-start;gap:14px;padding:18px max(22px,env(safe-area-inset-right,0px)) 0 max(22px,env(safe-area-inset-left,0px))}
 .hero .mark{width:54px;height:54px;object-fit:contain;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--g1) 60%,transparent)) drop-shadow(0 0 22px color-mix(in srgb,var(--g2) 40%,transparent))}
-.hero .brand,.bar b{font-family:var(--display);font-weight:700;letter-spacing:.12em;font-size:20px;line-height:1.05;text-shadow:0 2px 12px #000}
+.hero .brand,.minibar b{font-family:var(--display);font-weight:700;letter-spacing:.12em;font-size:20px;line-height:1.05;text-shadow:0 2px 12px #000}
 .hero .brand small{font-family:var(--body);font-weight:500;letter-spacing:.22em;font-size:9.5px;color:#b9c6dc;margin-top:4px}
 .pill{gap:7px;padding:6px 11px;background:rgba(10,30,26,.6);color:#6ee7b7;border:1px solid rgba(110,231,183,.35);backdrop-filter:blur(6px)}
 .pill i{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399}
@@ -73,9 +73,9 @@ body{font-family:var(--body)}
 .me{width:36px;height:36px;border-radius:50%;overflow:hidden;background:#34415a;display:grid;place-items:center;border:2px solid color-mix(in srgb,var(--g1) 55%,transparent);text-decoration:none!important}
 
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:#0d1426}
-.bar{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:9;height:54px;display:flex;align-items:center;gap:10px;padding:0 max(18px,env(safe-area-inset-right,0px)) 0 max(18px,env(safe-area-inset-left,0px));
+.minibar{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:9;height:54px;display:flex;align-items:center;gap:10px;padding:0 max(18px,env(safe-area-inset-right,0px)) 0 max(18px,env(safe-area-inset-left,0px));
   background:linear-gradient(90deg,rgba(13,20,38,.92),rgba(20,24,50,.92)),url(/banner.jpg) center 40%/cover;border-bottom:1px solid color-mix(in srgb,var(--g1) 30%,transparent);transform:translateY(-110%);transition:transform .25s ease;backdrop-filter:blur(8px)}
-.bar.show{transform:none}.bar img{width:30px;height:30px}.bar b{font-size:16px}
+.minibar.show{transform:none}.minibar img{width:30px;height:30px}.minibar b{font-size:16px}
 
 .shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:18px;margin-top:-86px;position:relative;padding:0 max(18px,env(safe-area-inset-right,0px)) 40px max(18px,env(safe-area-inset-left,0px));max-width:1500px;margin-left:auto;margin-right:auto}
 /* sidebar scrolls together with the page (one scrollbar) */
@@ -120,8 +120,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   .hero .brand{font-size:16px}.hero .mark{width:44px;height:44px}
   .shell .pagehead h1{font-size:24px}.shell .pagehead{min-height:44px}
 }
-@media(min-width:761px){.bar .mobile-toggle{display:none}}
-@media(prefers-reduced-motion:reduce){:root,.hero::after{animation:none}.hero-bg{transform:scale(1.06)!important}.bar,.gbody,.ghead .chev{transition:none}}
+@media(min-width:761px){.minibar .mobile-toggle{display:none}}
+@media(prefers-reduced-motion:reduce){:root,.hero::after{animation:none}.hero-bg{transform:scale(1.06)!important}.minibar,.gbody,.ghead .chev{transition:none}}
 
 /* ---- full-width on every screen: no centred max-width; phone rows wrap instead of squeezing ---- */
 .shell{max-width:none;margin-left:0;margin-right:0}

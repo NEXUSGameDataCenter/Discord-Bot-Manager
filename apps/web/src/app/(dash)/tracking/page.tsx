@@ -34,7 +34,7 @@ export default function TrackingPage() {
                 <small className="sub">{a.sent} / {a.targets} sent · {a.failed} failed · {a.queued} queued</small>
                 <strong>{pct}%</strong>
               </div>
-              <Link href={`/tracking/${a.id}`}><button className="secondary small">View Announcement</button></Link>
+              <Link href={`/tracking/${a.id}`} style={{ display: 'inline-block', marginTop: 10 }}><button className="secondary small">View Announcement</button></Link>
             </section>
           );
         })}
