@@ -5,6 +5,10 @@ import { connection } from '../redis';
 import { logger } from '../logger';
 import { assetDataUri } from '../assets';
 import { getClient, refreshBot, startBot, stopBot } from '../manager';
+import { publishRoleMenu } from '../modules/roleMenus';
+import { createHoneypotChannel } from '../modules/honeypot';
+import { giveRoles } from '../modules/welcome';
+import { refreshChannels } from '../guilds';
 
 async function handle(job: ControlJob): Promise<void> {
   switch (job.action) {
@@ -31,6 +35,28 @@ async function handle(job: ControlJob): Promise<void> {
       // Global edits are heavily rate-limited by Discord (~2 username changes/hour).
       const user = await c.user.edit({ username: job.username, avatar: avatar ?? undefined });
       await prisma.bot.update({ where: { id: job.botId }, data: { username: user.username, avatarUrl: user.displayAvatarURL({ size: 128 }) } });
+      return;
+    }
+    case 'publishRoleMenu':
+      return publishRoleMenu(getClient(job.botId), job.menuId);
+    case 'deleteRoleMenu': {
+      const ch = getClient(job.botId).guilds.cache.get(job.guildId)?.channels.cache.get(job.channelId);
+      if (ch?.isTextBased()) await ch.messages.delete(job.messageId).catch(() => undefined);
+      return;
+    }
+    case 'createHoneypot': {
+      const c = getClient(job.botId);
+      const channelId = await createHoneypotChannel(job.guildRefId, c, job.name);
+      const row = await prisma.guild.findUniqueOrThrow({ where: { id: job.guildRefId } });
+      await prisma.guildSettings.upsert({ where: { guildRefId: row.id }, create: { guildRefId: row.id, honeypotChannelId: channelId }, update: { honeypotChannelId: channelId } });
+      const g = c.guilds.cache.get(row.guildId);
+      if (g) await refreshChannels(row.id, g, row.defaultChannelId);
+      return;
+    }
+    case 'autorole': {
+      const g = getClient(job.botId).guilds.cache.get(job.guildId);
+      const m = await g?.members.fetch(job.userId).catch(() => null);
+      if (m) await giveRoles(m, job.roleIds); // member may have left during the delay
       return;
     }
   }

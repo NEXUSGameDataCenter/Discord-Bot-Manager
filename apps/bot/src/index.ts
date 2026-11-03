@@ -3,6 +3,7 @@ import { prisma } from '@nexus/db';
 import { env } from './env';
 import { logger } from './logger';
 import { store } from './assets';
+import { startConfigListener } from './modules/settings';
 import { closeRedis, connection } from './redis';
 import { runningBots, startBot, startPingLoop, stopAll } from './manager';
 import { startControlWorker } from './workers/control';
@@ -15,6 +16,7 @@ async function main() {
   logger.info({ assetStore: store.kind }, 'asset storage');
   const workers = [startControlWorker(), startProfileWorker(), startDispatchWorker(), startDeliveryWorker(), startManageWorker()];
   const ping = startPingLoop();
+  const configSub = startConfigListener();
 
   // Bots that were OFFLINE/ERROR in DB but meant to run: start them (worker restart / deploy).
   await prisma.bot.updateMany({ data: { status: 'OFFLINE' } });
@@ -47,6 +49,7 @@ async function main() {
     health.close();
     await Promise.allSettled(workers.map((w) => w.close()));
     await stopAll();
+    configSub.disconnect();
     await closeRedis();
     await prisma.$disconnect();
     process.exit(0);

@@ -30,7 +30,25 @@ export async function upsertGuild(botId: string, g: DGuild): Promise<string> {
     update: data,
   });
   await refreshChannels(row.id, g, row.defaultChannelId);
+  await refreshRoles(row.id, g);
   return row.id;
+}
+
+/** Role cache for dashboard dropdowns. assignable = below the bot's top role, not managed, not @everyone. */
+export async function refreshRoles(guildRefId: string, g: DGuild): Promise<void> {
+  const botTop = g.members.me?.roles.highest.position ?? 0;
+  const rows = [...g.roles.cache.values()].map((r) => ({
+    roleId: r.id,
+    name: r.name,
+    color: r.color,
+    position: r.position,
+    managed: r.managed,
+    assignable: !r.managed && r.id !== g.id && r.position < botTop,
+  }));
+  await prisma.$transaction([
+    prisma.role.deleteMany({ where: { guildRefId, roleId: { notIn: rows.map((r) => r.roleId) } } }),
+    ...rows.map((r) => prisma.role.upsert({ where: { guildRefId_roleId: { guildRefId, roleId: r.roleId } }, create: { guildRefId, ...r }, update: r })),
+  ]);
 }
 
 export async function refreshChannels(guildRefId: string, g: DGuild, currentDefault?: string | null): Promise<void> {

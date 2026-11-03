@@ -9,7 +9,11 @@ export const QUEUES = {
 export type ControlJob =
   | { botId: string; action: 'start' | 'stop' | 'restart' | 'refresh' }
   | { botId: string; action: 'leave'; guildId: string }
-  | { botId: string; action: 'editGlobal'; username?: string; avatarAssetId?: string };
+  | { botId: string; action: 'editGlobal'; username?: string; avatarAssetId?: string }
+  | { botId: string; action: 'publishRoleMenu'; menuId: string }
+  | { botId: string; action: 'deleteRoleMenu'; guildId: string; channelId: string; messageId: string }
+  | { botId: string; action: 'createHoneypot'; guildRefId: string; name: string }
+  | { botId: string; action: 'autorole'; guildId: string; userId: string; roleIds: string[] };
 
 export interface ProfileJob { guildRefId: string; force?: boolean }
 export interface DispatchJob { announcementId: string }
@@ -17,6 +21,8 @@ export interface DeliveryJob { deliveryId: string }
 export interface ManageJob { announcementId: string; action: 'edit' | 'delete'; content?: string }
 
 export const EVENTS_CHANNEL = 'nexus:events';
+/** Web → bot: a guild's module settings changed (payload = guildRefId). */
+export const CONFIG_CHANNEL = 'nexus:config';
 
 export type NexusEvent =
   | { type: 'bot'; botId: string; status: string; pingMs?: number | null }

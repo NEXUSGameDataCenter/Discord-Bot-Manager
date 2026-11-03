@@ -93,3 +93,25 @@
 
 ## I. Mobile / responsive
 | ☐ | หน้าจอ 375px: เมนู ☰, ขั้น Target (dropdown 3 ช่องเรียงลงมา), Tracking, Profiles preview | |
+
+## J. โมดูลใหม่ (อ้างอิง koya.gg) — ต้องทดสอบในเซิร์ฟทดสอบ
+> ก่อนเริ่ม: Developer Portal → Bot → เปิด **Server Members Intent** แล้วเชิญ Bot ใหม่ด้วย Invite URL ล่าสุด (สิทธิ์เพิ่ม + `applications.commands`) และลาก role ของ Bot ให้อยู่สูงกว่า role ที่จะแจก
+
+| ☐ | ทดสอบ | คาดหวัง | ผล |
+|---|---|---|---|
+| ☐ | Welcome: เลือกห้องจาก dropdown, ใช้ `{user.mention}` | คนใหม่เข้า → ข้อความขึ้น, mention เฉพาะคนนั้น | |
+| ☐ | Join DM | ได้ DM (ถ้าเปิดรับ) | |
+| ☐ | Goodbye | ออกจากเซิร์ฟ → ข้อความขึ้น | |
+| ☐ | Auto role ทันที + แบบหน่วง 1 นาที, target คน/บอท | ได้ role ตามเวลา, restart bot ระหว่างรอก็ยังได้ | |
+| ☐ | role ที่สูงกว่า Bot | เลือกไม่ได้ใน dropdown | |
+| ☐ | Reaction role แบบปุ่ม 4 โหมด (TOGGLE/UNIQUE/ADD_ONLY/REMOVE_ONLY) | ตอบกลับ ephemeral และ role เปลี่ยนถูกต้อง | |
+| ☐ | Reaction role แบบ emoji (unicode + custom emoji) | react → ได้ role, เอา react ออก → ถอด (TOGGLE) | |
+| ☐ | Edit เมนูแล้วเปลี่ยนห้อง | ข้อความเก่าถูกลบ, โพสต์ในห้องใหม่ | |
+| ☐ | Slash commands ขึ้นในเซิร์ฟ | สมาชิกทั่วไปไม่เห็น, mod เห็นตามสิทธิ์ | |
+| ☐ | /ban /kick /timeout 10m /warn /purge 5 /lock /unlock /case | ทำงาน + case ขึ้นใน mod log และหน้า Moderation | |
+| ☐ | /ban คนที่ role สูงกว่าตัวเอง | ถูกปฏิเสธพร้อมเหตุผล | |
+| ☐ | reason presets | ขึ้นเป็น autocomplete | |
+| ☐ | Honeypot โหมด alert (ใช้บัญชีทดสอบ) | ข้อความถูกลบ + case HONEYPOT | |
+| ☐ | Honeypot โหมด softban/ban | บัญชีทดสอบโดนจริง, แอดมินและ exempt role ไม่โดน | |
+| ☐ | สร้างห้อง Honeypot ด้วยชื่อ custom | ห้องถูกสร้าง + ข้อความเตือน + ถูกเลือกอัตโนมัติ | |
+| ☐ | **ตัดสินใจ:** Honeypot action เริ่มต้นใช้ `alert` ไปก่อน 1–2 วัน แล้วค่อยเปลี่ยนเป็น softban | | |

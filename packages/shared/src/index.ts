@@ -5,3 +5,4 @@ export * from './template';
 export * from './permissions';
 export * from './retry';
 export * from './queues';
+export * from './modules';

@@ -11,6 +11,7 @@ export const useToast = () => useContext(ToastCtx);
 const groups: { label: string; items: [string, string, string][] }[] = [
   { label: 'OVERVIEW', items: [['/', '▦', 'ภาพรวมระบบ'], ['/bots', '♟', 'จัดการ Bots'], ['/servers', '▤', 'จัดการ Servers']] },
   { label: 'BOT CUSTOMIZATION', items: [['/profiles', '◉', 'Server Profiles'], ['/presets', '▱', 'Profile Presets']] },
+  { label: 'MODULES', items: [['/welcome', '✋', 'Welcome & Auto roles'], ['/reaction-roles', '◎', 'Reaction Roles'], ['/moderation', '⛨', 'Moderation & Honeypot']] },
   {
     label: 'COMMUNICATION',
     items: [['/announcements', '➤', 'Announcements'], ['/targets', '♧', 'Target Groups'], ['/tracking', '⌁', 'Delivery Tracking'], ['/schedules', '◷', 'Schedules']],

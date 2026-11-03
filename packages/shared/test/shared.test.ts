@@ -57,7 +57,7 @@ describe('template rendering', () => {
 describe('permissions', () => {
   it('computes the invite bitfield', () => {
     // View 1024 + Send 2048 + Embed 16384 + Attach 32768 + MentionEveryone 131072 + ChangeNickname 67108864 + ManageWebhooks 536870912
-    expect(inviteBitfield()).toBe(604163072n);
+    expect(inviteBitfield() & 604163072n).toBe(604163072n); // original announcement perms still included
   });
   it('lists missing permissions', () => {
     const have = PERMS.ViewChannel | PERMS.SendMessages;

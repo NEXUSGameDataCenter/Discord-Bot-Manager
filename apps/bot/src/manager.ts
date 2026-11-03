@@ -1,4 +1,4 @@
-import { Client, Events, GatewayIntentBits, type Guild as DGuild } from 'discord.js';
+import { Client, Events, GatewayIntentBits, Partials, type Guild as DGuild } from 'discord.js';
 import { prisma } from '@nexus/db';
 import { decrypt } from '@nexus/shared/crypto';
 import { env } from './env';
@@ -6,6 +6,10 @@ import { logger } from './logger';
 import { publish } from './redis';
 import { refreshChannels, syncAllGuilds, upsertGuild } from './guilds';
 import { profileQueue, RETRY_OPTS } from './queues';
+import { onMemberAdd, onMemberRemove } from './modules/welcome';
+import { onReaction, onRoleButton } from './modules/roleMenus';
+import { onMessage } from './modules/honeypot';
+import { onCommand, onReasonAutocomplete, registerCommands } from './modules/moderation';
 
 const clients = new Map<string, Client>();
 const refreshTimers = new Map<string, NodeJS.Timeout>();
@@ -57,8 +61,12 @@ export async function startBot(botId: string): Promise<void> {
   const bot = await prisma.bot.findUnique({ where: { id: botId } });
   if (!bot) return;
   const token = decrypt(bot.tokenEnc, env.ENCRYPTION_KEY);
-  // Guilds intent only: no feature needs privileged intents.
-  const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+  // Guilds: core. GuildMembers (privileged): welcome/autorole. GuildMessages: honeypot (no MessageContent needed).
+  // GuildMessageReactions: reaction roles. Partials let reactions on old (uncached) menu messages fire.
+  const client = new Client({
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions],
+    partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User, Partials.GuildMember],
+  });
   clients.set(botId, client);
   await setStatus(botId, 'STARTING', { lastError: null });
 
@@ -72,6 +80,25 @@ export async function startBot(botId: string): Promise<void> {
     });
     await syncAllGuilds(botId, c.guilds.cache.values());
     await enqueueOutOfSyncProfiles(botId);
+    await registerCommands(c).catch((err) => logger.error({ err: err.message }, 'command registration failed'));
+  });
+  const safe = (label: string, fn: () => Promise<void>) => void fn().catch((err) => logger.error({ err: err instanceof Error ? err.message : err, botId }, label));
+  client.on(Events.GuildMemberAdd, (m) => safe('memberAdd', () => onMemberAdd(botId, m)));
+  client.on(Events.GuildMemberRemove, (m) => safe('memberRemove', () => onMemberRemove(botId, m)));
+  client.on(Events.MessageCreate, (m) => safe('honeypot', () => onMessage(botId, m)));
+  client.on(Events.MessageReactionAdd, (r, u) => safe('reactionAdd', () => onReaction(r, u, true)));
+  client.on(Events.MessageReactionRemove, (r, u) => safe('reactionRemove', () => onReaction(r, u, false)));
+  client.on(Events.InteractionCreate, (i) =>
+    safe('interaction', async () => {
+      if (i.isButton() && i.customId.startsWith('rr:')) return onRoleButton(i);
+      if (i.isAutocomplete()) return onReasonAutocomplete(botId, i);
+      if (i.isChatInputCommand()) return onCommand(botId, i);
+    }),
+  );
+  client.on(Events.GuildRoleCreate, (r) => scheduleRefresh(botId, r.guild));
+  // The bot's own roles changed (granted/revoked) → recompute channel perms + assignable roles.
+  client.on(Events.GuildMemberUpdate, (_o, m) => {
+    if (m.id === client.user?.id) scheduleRefresh(botId, m.guild);
   });
   client.on(Events.GuildCreate, async (g) => {
     try {
@@ -108,8 +135,9 @@ export async function startBot(botId: string): Promise<void> {
     clients.delete(botId);
     await client.destroy().catch(() => undefined);
     const msg = err instanceof Error ? err.message : String(err);
+    const intentHint = /disallowed intents/i.test(msg) ? 'เปิด Server Members Intent ใน Developer Portal → Bot → Privileged Gateway Intents' : null;
     logger.error({ botId, msg }, 'login failed');
-    await setStatus(botId, 'ERROR', { lastError: /token/i.test(msg) ? 'Token ไม่ถูกต้องหรือถูก reset แล้ว' : msg });
+    await setStatus(botId, 'ERROR', { lastError: intentHint ?? (/token/i.test(msg) ? 'Token ไม่ถูกต้องหรือถูก reset แล้ว' : msg) });
   }
 }
 

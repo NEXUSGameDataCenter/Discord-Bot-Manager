@@ -24,7 +24,7 @@ Dashboard แบบ self-hosted สำหรับควบคุม Discord bot
 ## 1. สร้าง App ใน Discord Developer Portal
 
 1. ไปที่ <https://discord.com/developers/applications> → **New Application**
-2. แท็บ **Bot** → ไม่ต้องเปิด Privileged Gateway Intents ใดๆ (ระบบใช้แค่ `Guilds`)
+2. แท็บ **Bot** → Privileged Gateway Intents → เปิด **Server Members Intent** (ใช้กับ Welcome/Auto roles) — ไม่ต้องเปิด Message Content
 3. แท็บ **OAuth2** → คัดลอก **Client ID** และ **Client Secret** (ใช้สำหรับ login เข้า Dashboard)
    และเพิ่ม Redirect: `http://localhost:3000/api/auth/callback/discord` (และ URL จริงตอน deploy)
 
@@ -38,7 +38,7 @@ Dashboard แบบ self-hosted สำหรับควบคุม Discord bot
 ## 3. Invite URL
 
 หน้า **จัดการ Bots** มีปุ่ม Copy/Invite ที่สร้าง URL ให้อัตโนมัติ
-Permission bitfield = **`604163072`**
+Permission bitfield = **`1100384234582`** (scope: `bot applications.commands`)
 
 | Permission | เหตุผล |
 |---|---|
@@ -49,6 +49,13 @@ Permission bitfield = **`604163072`**
 | Mention Everyone | ใช้ @everyone/@here เมื่อผู้ใช้ยืนยันเท่านั้น |
 | Change Nickname | ตั้ง Nickname แยกตาม Server |
 | Manage Webhooks | โหมดส่งผ่าน Webhook (Custom Identity) |
+| Manage Roles | Auto roles / Reaction roles |
+| Add Reactions | เมนู Reaction role แบบ emoji |
+| Kick / Ban / Timeout Members | slash commands และ Honeypot |
+| Manage Messages | /purge และลบข้อความในห้อง Honeypot |
+| Manage Channels | /lock /unlock และสร้างห้อง Honeypot |
+
+**Intents:** `Guilds`, `GuildMembers` (privileged), `GuildMessages`, `GuildMessageReactions` — ไม่ใช้ `MessageContent`
 
 ## 4. รันบนเครื่องด้วย docker-compose
 
@@ -88,5 +95,4 @@ pnpm test                                          # unit tests (packages/shared
 
 - Presence/Activity เป็น global เปลี่ยนแยกตาม Server ไม่ได้ (Discord)
 - Banner/Bio ราย Server: ส่งผ่าน `PATCH /guilds/{id}/members/@me` แล้ว แต่ต้องยืนยันการแสดงผลใน Discord client จริง
-- ด้วย intent `Guilds` อย่างเดียว ระบบไม่ได้รับ event เมื่อ Role ถูก "มอบให้" Bot → กด **Run Health Check** ในหน้า Servers หลังแก้สิทธิ์
 - Global username ถูก rate-limit หนักมาก (~2 ครั้ง/ชั่วโมง)

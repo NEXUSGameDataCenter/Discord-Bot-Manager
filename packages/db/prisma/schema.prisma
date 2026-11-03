@@ -62,6 +62,10 @@ model Guild {
   channels         Channel[]
   profile          GuildProfile?
   targets          AnnouncementTarget[]
+  roles            Role[]
+  settings         GuildSettings?
+  roleMenus        RoleMenu[]
+  modCases         ModCase[]
 
   @@unique([botId, guildId])
   @@index([botId, present])
@@ -240,4 +244,90 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// Cache of guild roles for dashboard dropdowns, kept fresh by the bot worker.
+model Role {
+  id         String  @id @default(cuid())
+  guildRefId String
+  roleId     String
+  name       String
+  color      Int     @default(0)
+  position   Int     @default(0)
+  managed    Boolean @default(false)
+  /// Below the bot's highest role, not managed, not @everyone
+  assignable Boolean @default(false)
+  guild      Guild   @relation(fields: [guildRefId], references: [id], onDelete: Cascade)
+
+  @@unique([guildRefId, roleId])
+}
+
+/// Per-server module settings (welcome, autorole, moderation, honeypot).
+model GuildSettings {
+  id                    String   @id @default(cuid())
+  guildRefId            String   @unique
+  welcomeEnabled        Boolean  @default(false)
+  welcomeChannelId      String?
+  welcomeMessage        String   @default("ยินดีต้อนรับ {user.mention} สู่ {server.name}! คุณคือสมาชิกคนที่ {memberCount}")
+  welcomeDmEnabled      Boolean  @default(false)
+  welcomeDmMessage      String   @default("ยินดีต้อนรับสู่ {server.name}!")
+  goodbyeEnabled        Boolean  @default(false)
+  goodbyeChannelId      String?
+  goodbyeMessage        String   @default("{user.name} ได้ออกจากเซิร์ฟเวอร์แล้ว")
+  /// [{ roleId, target: "human"|"bot"|"all", delaySec }]
+  autoRoles             Json     @default("[]")
+  modLogChannelId       String?
+  reasonPresets         String[]
+  honeypotEnabled       Boolean  @default(false)
+  honeypotChannelId     String?
+  /// alert | timeout | kick | softban | ban
+  honeypotAction        String   @default("alert")
+  honeypotExemptRoleIds String[]
+  updatedAt             DateTime @updatedAt
+  guild                 Guild    @relation(fields: [guildRefId], references: [id], onDelete: Cascade)
+}
+
+/// Self-assign role menu (buttons or emoji reactions).
+model RoleMenu {
+  id          String   @id @default(cuid())
+  guildRefId  String
+  channelId   String
+  messageId   String?
+  title       String
+  description String   @default("")
+  color       Int      @default(6514417)
+  /// BUTTON | REACTION
+  type        String   @default("BUTTON")
+  /// TOGGLE | UNIQUE | ADD_ONLY | REMOVE_ONLY
+  mode        String   @default("TOGGLE")
+  /// [{ roleId, label, emoji, style }]
+  options     Json     @default("[]")
+  /// DRAFT | PUBLISHED | FAILED
+  status      String   @default("DRAFT")
+  lastError   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  guild       Guild    @relation(fields: [guildRefId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+/// Moderation case (slash commands + honeypot).
+model ModCase {
+  id            String   @id @default(cuid())
+  guildRefId    String
+  caseNo        Int
+  /// BAN | UNBAN | KICK | SOFTBAN | TIMEOUT | UNTIMEOUT | WARN | PURGE | LOCK | UNLOCK | HONEYPOT
+  action        String
+  targetUserId  String?
+  targetTag     String?
+  moderatorId   String
+  moderatorTag  String
+  reason        String   @default("")
+  durationSec   Int?
+  createdAt     DateTime @default(now())
+  guild         Guild    @relation(fields: [guildRefId], references: [id], onDelete: Cascade)
+
+  @@unique([guildRefId, caseNo])
+  @@index([guildRefId, targetUserId])
 }
