@@ -13,7 +13,7 @@
 | ☐ | ขั้นตอน | ใคร | ที่ไหน |
 |---|---|---|---|
 | ☐ | สร้าง/เลือก Discord application สำหรับ **login เข้า Dashboard** แล้วคัดลอก Client ID + Client Secret | 👤 | discord.com/developers → OAuth2 |
-| ☐ | เพิ่ม Redirect `https://web-production-4afe7.up.railway.app/api/auth/callback/discord` (และโดเมนจริงถ้ามี ดูข้อ 4) | 👤 | Developer Portal → OAuth2 → Redirects |
+| ☐ | เพิ่ม Redirect `https://nexusmanager.up.railway.app/api/auth/callback/discord` (และโดเมนจริงถ้ามี ดูข้อ 4) | 👤 | Developer Portal → OAuth2 → Redirects |
 | ☐ | ตั้ง `AUTH_DISCORD_ID` และ `AUTH_DISCORD_SECRET` ใน service **web** | 👤 | Railway → nexus-bot-control → web → Variables |
 | ☐ | คัดลอก `service_role` key แล้วตั้ง `SUPABASE_SERVICE_ROLE_KEY` ใน **web** และ **bot** (ถ้าไม่ตั้ง รูป/ไฟล์แนบจะหายทุกครั้งที่ redeploy) | 👤 | Supabase → Project Settings → API Keys |
 | ☐ | Bot application: เปิด **Server Members Intent** (ไม่ต้องเปิด Message Content) | 👤 | Developer Portal → Bot → Privileged Gateway Intents |
