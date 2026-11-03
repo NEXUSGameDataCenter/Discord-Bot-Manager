@@ -122,3 +122,16 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 }
 @media(min-width:761px){.bar .mobile-toggle{display:none}}
 @media(prefers-reduced-motion:reduce){:root,.hero::after{animation:none}.hero-bg{transform:scale(1.06)!important}.bar,.gbody,.ghead .chev{transition:none}}
+
+/* ---- full-width on every screen: no centred max-width; phone rows wrap instead of squeezing ---- */
+.shell{max-width:none;margin-left:0;margin-right:0}
+.shell .pagehead{flex-wrap:wrap}
+@media(max-width:760px){
+  .hero .brand small{display:none}
+  .shell .pagehead{align-items:flex-start}
+  .shell .pagehead>*:not(div){width:100%}
+  .botrow,.serverrow,.activityrow,.deliveryrow{flex-wrap:wrap;row-gap:8px}
+  .botrow>.grow,.serverrow>.grow,.activityrow>.grow,.deliveryrow>.grow{flex:1 1 calc(100% - 60px)}
+  .statvalue{font-size:24px}
+  .card{padding:14px}
+}
