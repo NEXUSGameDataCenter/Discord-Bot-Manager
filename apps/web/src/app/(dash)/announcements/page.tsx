@@ -156,9 +156,11 @@ export default function AnnouncementsPage() {
                 checked={allowEveryone}
                 onChange={(e) => {
                   if (e.target.checked) {
-                    const ok = confirm(`⚠ เปิด @everyone / @here?\nข้อความจะ ping สมาชิกทุกคนใน ${serverCount} Servers ที่เลือก`);
+                    const ok = confirm(`⚠ เปิด @everyone / @here?\nข้อความจะ ping สมาชิกทุกคนใน ${serverCount} Servers ที่เลือก\n(ระบบจะใส่ @everyone ไว้หน้าข้อความให้ แก้เป็น @here ได้ในขั้น Compose)`);
                     setAllowEveryone(ok);
                     setEveryoneConfirmed(ok);
+                    // Allowing alone pings nobody: the tag must be in the message content (not in an embed).
+                    if (ok && !/@(everyone|here)/.test(content)) setContent(`@everyone\n${content}`);
                   } else {
                     setAllowEveryone(false);
                     setEveryoneConfirmed(false);
@@ -167,7 +169,14 @@ export default function AnnouncementsPage() {
               />{' '}
               Allow @everyone / @here (extra confirmation required)
             </label>
-            <div className="notice">Mention ทุกประเภทถูกปิดโดยค่าเริ่มต้น (allowedMentions ถูกตั้งค่าเสมอ) · Role ping ใช้ได้เฉพาะ Role ID ที่ใส่ใน Override ของแต่ละ Server</div>
+            {allowEveryone && !/@(everyone|here)/.test(content) && (
+              <div className="notice" style={{ background: '#452432', color: '#fecdd3' }}>
+                เปิดอนุญาตแล้วแต่ข้อความยังไม่มี @everyone หรือ @here — ไม่มีใครถูก ping{' '}
+                <button className="secondary small" onClick={() => setContent(`@everyone\n${content}`)}>ใส่ @everyone</button>{' '}
+                <button className="secondary small" onClick={() => setContent(`@here\n${content}`)}>ใส่ @here</button>
+              </div>
+            )}
+            <div className="notice">แท็ก @everyone / @here ต้องอยู่ใน <b>ข้อความ (Message Content)</b> เท่านั้น — ถ้าอยู่ใน Embed จะไม่ ping · Mention ทุกประเภทถูกปิดโดยค่าเริ่มต้น (allowedMentions ถูกตั้งค่าเสมอ) · Role ping ใช้ได้เฉพาะ Role ID ที่ใส่ใน Override ของแต่ละ Server</div>
           </section>
           <div className="toolbar" style={{ justifyContent: 'space-between', marginTop: 14 }}>
             <button className="secondary" onClick={() => setStep(1)}>← Back</button>
@@ -186,6 +195,8 @@ export default function AnnouncementsPage() {
               <div><small className="muted">Timezone</small><h2>UTC+7</h2></div>
             </div>
             <ErrorBox error={[...payloadErrors, ...targetProblems].join(' · ') || undefined} />
+            {allowEveryone && !/@(everyone|here)/.test(content) && <div className="notice">⚠ อนุญาต @everyone แล้ว แต่ข้อความไม่มีแท็ก จะไม่มีใครถูก ping — กลับไปขั้น Compose หรือขั้น Target เพื่อใส่</div>}
+            {!allowEveryone && /@(everyone|here)/.test(content) && <div className="notice">ข้อความมี @everyone/@here แต่ยังไม่ได้อนุญาตในขั้น Target — จะแสดงเป็นข้อความธรรมดา ไม่ ping ใคร</div>}
             <hr style={{ borderColor: 'var(--line)' }} />
             <div className="field">
               <label>Send Timing</label>
