@@ -19,9 +19,7 @@ export default function OverviewPage() {
   const max = Math.max(1, ...(data?.activity.map((a) => a.count) ?? [1]));
   return (
     <>
-      <div className="herobanner" role="img" aria-label="Nexus">
-        <div className="herotext"><strong>Nexus Manager</strong><small>ภาพรวมของ Bot, เซิร์ฟเวอร์ และการส่งประกาศ</small></div>
-      </div>
+      <PageHead crumb="OVERVIEW" title="ภาพรวมระบบ" />
       <ErrorBox error={error} />
       {!data ? (
         <Loading rows={4} />
@@ -34,10 +32,10 @@ export default function OverviewPage() {
               ['Messages Delivered', data.sent30.toLocaleString(), 'Last 30 days', '➤'],
               ['Failed Deliveries', data.failed7.toLocaleString(), data.failed7 ? 'Requires attention' : 'Last 7 days', '⚠'],
             ].map(([l, v, s, i]) => (
-              <section className="card" key={l}>
+              <section className="card glow" key={l}>
                 <span className="staticon">{i}</span>
                 <div className="statlabel">{l}</div>
-                <div className="statvalue">{v}</div>
+                <div className="statvalue value">{v}</div>
                 <div className="sub">{s}</div>
               </section>
             ))}
