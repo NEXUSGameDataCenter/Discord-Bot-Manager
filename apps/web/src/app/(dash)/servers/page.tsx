@@ -1,5 +1,4 @@
 'use client';
-import Link from 'next/link';
 import { useState } from 'react';
 import { PageHead, Loading, ErrorBox, Empty, useToast } from '@/components/Shell';
 import { BotPicker } from '@/components/BotPicker';
@@ -115,7 +114,7 @@ export default function ServersPage() {
             </details>
             </details>
             <div className="toolbar" style={{ margin: '10px 0 0' }}>
-              <Link href={`/profiles?guild=${g.id}`}><button className="secondary small">Manage Profile</button></Link>
+
               <button className="danger small" onClick={() => leave(g)}>Leave Server</button>
             </div>
           </section>

@@ -14,7 +14,6 @@ type Item = [href: string, icon: string, label: string, min: TeamRole];
 type Group = { id: string; label: string; hue: string; items: Item[] };
 const groups: Group[] = [
   { id: 'overview', label: 'OVERVIEW', hue: '#38e1ff', items: [['/', 'dash', 'ภาพรวมระบบ', 'EDITOR'], ['/bots', 'bot', 'จัดการ Bots', 'ADMIN'], ['/servers', 'server', 'จัดการ Servers', 'ADMIN']] },
-  { id: 'custom', label: 'BOT CUSTOMIZATION', hue: '#60a5fa', items: [['/profiles', 'idcard', 'Server Profiles', 'ADMIN'], ['/presets', 'layers', 'Profile Presets', 'ADMIN']] },
   { id: 'modules', label: 'MODULES', hue: '#a78bfa', items: [['/welcome', 'join', 'Welcome & Auto roles', 'ADMIN'], ['/reaction-roles', 'react', 'Reaction Roles', 'ADMIN'], ['/moderation', 'shield', 'Moderation & Honeypot', 'ADMIN']] },
   {
     id: 'comms',

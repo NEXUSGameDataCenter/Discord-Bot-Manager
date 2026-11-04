@@ -29,6 +29,7 @@ export const GET = routeAs('EDITOR', async () => {
         sent: count('SENT'),
         failed: count('FAILED'),
         queued: count('QUEUED'),
+        deleted: count('DELETED'),
         schedule: a.schedule ? { cron: a.schedule.cron, runAt: a.schedule.runAt, active: a.schedule.active } : null,
       };
     }),

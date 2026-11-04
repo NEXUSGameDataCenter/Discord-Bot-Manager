@@ -31,4 +31,8 @@ export type GuildRow = {
 
 export type ChannelRow = { channelId: string; name: string; type: number; parentName: string | null; canAttach: boolean; canWebhook: boolean; canMentionEveryone: boolean };
 export type Preset = { id: string; name: string; nick: string | null; bio: string | null; avatarAssetId: string | null; bannerAssetId: string | null };
-export type AuditRow = { id: string; actor: string; action: string; targets: Record<string, unknown>; result: string; createdAt: string };
+export type AuditRow = {
+  id: string; actor: string; action: string; targets: Record<string, unknown>; result: string; detail: Record<string, unknown> | null; createdAt: string;
+  actorName: string | null; actorEmail: string | null;
+  ann: { title: string; status: string; total: number; sent: number; failed: number; queued: number; deleted: number } | null;
+};

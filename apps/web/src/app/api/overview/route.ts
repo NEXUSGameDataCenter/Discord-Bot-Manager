@@ -1,5 +1,6 @@
 import { prisma } from '@nexus/db';
 import { routeAs } from '@/lib/server/route';
+import { enrichAudit } from '@/lib/server/auditView';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,7 @@ export const GET = routeAs('EDITOR', async () => {
     prisma.delivery.count({ where: { status: 'SENT', sentAt: { gte: since30 } } }),
     prisma.delivery.count({ where: { status: 'FAILED', updatedAt: { gte: since7 } } }),
     prisma.delivery.findMany({ where: { status: 'SENT', sentAt: { gte: since7 } }, select: { sentAt: true } }),
-    prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 6 }),
+    prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 8 }),
   ]);
   // Bucket by Asia/Bangkok calendar day.
   const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' });
@@ -25,6 +26,6 @@ export const GET = routeAs('EDITOR', async () => {
     sent30,
     failed7,
     activity: days.map((d) => ({ day: d, count: counts[d] ?? 0 })),
-    recent,
+    recent: await enrichAudit(recent),
   };
 });

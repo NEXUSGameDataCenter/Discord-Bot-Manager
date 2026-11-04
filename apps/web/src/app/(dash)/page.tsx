@@ -1,8 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { PageHead, Loading, ErrorBox } from '@/components/Shell';
-import { useApi, useEvents, fmtDate, statusClass } from '@/lib/client';
+import { useApi, useEvents, statusClass } from '@/lib/client';
 import type { AuditRow } from '@/lib/types';
+import { ActivityRow, CatChips, describe, type Cat } from '@/components/Activity';
+import { useState } from 'react';
 
 type Overview = {
   bots: { id: string; username: string; status: string; pingMs: number | null; guilds: number }[];
@@ -78,24 +80,12 @@ export default function OverviewPage() {
               </section>
             </div>
             <div className="grid">
-              <section className="card">
-                <h3>Recent Activity</h3>
-                {!data.recent.length && <p className="sub">ยังไม่มีกิจกรรม</p>}
-                {data.recent.map((a) => (
-                  <div className="activityrow" key={a.id}>
-                    <div className="grow">
-                      <strong>{a.action}</strong>
-                      <small>{fmtDate(a.createdAt)}</small>
-                    </div>
-                    <span className={`status ${statusClass(a.result)}`}>{a.result}</span>
-                  </div>
-                ))}
-              </section>
+              <RecentActivity rows={data.recent} />
               <section className="card">
                 <h3>Quick Actions</h3>
                 <div className="grid">
                   <Link href="/announcements"><button style={{ width: '100%' }}>＋ Create Announcement</button></Link>
-                  <Link href="/profiles"><button className="secondary" style={{ width: '100%' }}>◉ Edit Server Profile</button></Link>
+                  <Link href="/servers"><button className="secondary" style={{ width: '100%' }}>▤ Manage Servers</button></Link>
                   <Link href="/bots"><button className="secondary" style={{ width: '100%' }}>♟ Manage Bots</button></Link>
                 </div>
               </section>
@@ -104,5 +94,21 @@ export default function OverviewPage() {
         </>
       )}
     </>
+  );
+}
+
+function RecentActivity({ rows }: { rows: AuditRow[] }) {
+  const [cat, setCat] = useState<Cat | 'all'>('all');
+  const list = rows.filter((r) => cat === 'all' || describe(r).cat === cat);
+  return (
+    <section className="card">
+      <div className="switchline">
+        <h3>Recent Activity</h3>
+        <Link href="/audit" style={{ fontSize: 12.5 }}>ดูทั้งหมด →</Link>
+      </div>
+      <CatChips value={cat} onChange={setCat} />
+      {!list.length && <p className="sub">ยังไม่มีกิจกรรม</p>}
+      {list.map((r) => <ActivityRow key={r.id} row={r} />)}
+    </section>
   );
 }
