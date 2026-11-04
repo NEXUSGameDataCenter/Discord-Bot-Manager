@@ -45,7 +45,7 @@ describe('template rendering', () => {
   });
   it('renders inside embeds', () => {
     const out = renderPayload(
-      { content: 'hi', embeds: [{ title: '{server.name}', fields: [{ name: 'a', value: '{event}' }], footer: { text: '{channel.name}' } }], buttons: [], attachmentIds: [] },
+      { content: 'hi', embeds: [{ title: '{server.name}', fields: [{ name: 'a', value: '{event}' }], footer: { text: '{channel.name}' } }], buttons: [], attachmentIds: [], imageUrls: [] },
       ctx,
     );
     expect(out.embeds[0]?.title).toBe('TOSM Official');

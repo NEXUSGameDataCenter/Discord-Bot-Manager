@@ -86,7 +86,7 @@ async function send(d: LoadedDelivery): Promise<{ messageId: string; webhookId: 
 
   const payload = messagePayloadBase.parse(a.payload);
   const need: PermName[] = [...CHANNEL_SEND_PERMS];
-  if (payload.attachmentIds.length) need.push('AttachFiles');
+  if (payload.attachmentIds.length || payload.imageUrls.length) need.push('AttachFiles');
   if (target.mode === 'WEBHOOK') need.push('ManageWebhooks');
   if (a.allowEveryone) need.push('MentionEveryone');
   const missing = missingPermissions(channel.permissionsFor(dg.members.me!)?.bitfield ?? 0n, need);
@@ -118,7 +118,10 @@ async function send(d: LoadedDelivery): Promise<{ messageId: string; webhookId: 
     content: rendered.content || undefined,
     embeds: rendered.embeds.map((e) => toApiEmbed(e, now)),
     components: buttonRows(rendered),
-    files: await Promise.all(assets.map(async (f) => ({ attachment: await store.get(f.storedAs), name: f.fileName }))),
+    files: [
+      ...(await Promise.all(assets.map(async (f) => ({ attachment: await store.get(f.storedAs), name: f.fileName })))),
+      ...(await Promise.all(payload.imageUrls.map((u, i) => fetchImage(u, i)))),
+    ],
     allowedMentions: buildAllowedMentions(a.allowEveryone, target.pingRoleId),
   };
 
@@ -192,4 +195,28 @@ export function startDeliveryWorker(): Worker<DeliveryJob> {
     })().catch((e) => logger.error({ e }, 'final failure bookkeeping failed'));
   });
   return w;
+}
+
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+const PRIVATE_HOST = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|\[?::1\]?$|\[?f[cd]|.*\.internal$|.*\.railway\.internal$)/i;
+
+/** Downloads an image link so it is posted as a real attachment (outside any embed). */
+async function fetchImage(url: string, i: number): Promise<{ attachment: Buffer; name: string }> {
+  const u = new URL(url);
+  if (u.protocol !== 'https:' || PRIVATE_HOST.test(u.hostname)) throw new FatalError(`ลิงก์รูปไม่อนุญาต: ${u.hostname}`);
+  let res: Response;
+  try {
+    res = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(15_000), headers: { 'user-agent': 'NexusBot/1.0' } });
+  } catch {
+    throw new Error(`โหลดรูปจากลิงก์ไม่ได้ (${u.hostname})`); // network issue: retried
+  }
+  if (!res.ok) throw new FatalError(`โหลดรูปจากลิงก์ไม่ได้: HTTP ${res.status} (${u.hostname})`);
+  const type = res.headers.get('content-type') ?? '';
+  if (!type.startsWith('image/')) throw new FatalError(`ลิงก์นี้ไม่ใช่ไฟล์รูปภาพ (${type || 'unknown'})`);
+  if (Number(res.headers.get('content-length') ?? 0) > MAX_IMAGE_BYTES) throw new FatalError('รูปจากลิงก์ใหญ่เกิน 20 MB');
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length > MAX_IMAGE_BYTES) throw new FatalError('รูปจากลิงก์ใหญ่เกิน 20 MB');
+  const ext = (type.split('/')[1] ?? 'png').split(/[;+]/)[0]!.replace('jpeg', 'jpg');
+  const base = decodeURIComponent(u.pathname.split('/').pop() ?? '').replace(/[^\w.-]/g, '').slice(0, 60);
+  return { attachment: buf, name: /\.\w{2,5}$/.test(base) ? base : `image-${i + 1}.${ext}` };
 }

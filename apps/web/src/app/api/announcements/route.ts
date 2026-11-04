@@ -42,8 +42,8 @@ export const POST = routeAs('EDITOR', async (req, { actor }) => {
   if (!bot) throw new HttpError(400, 'Bot not found');
 
   // Server-side re-check of every target against the live channel cache: never trust the browser's list.
-  const hasFiles = input.payload.attachmentIds.length > 0;
-  if (hasFiles) {
+  const hasFiles = input.payload.attachmentIds.length + input.payload.imageUrls.length > 0;
+  if (input.payload.attachmentIds.length) {
     const n = await prisma.asset.count({ where: { id: { in: input.payload.attachmentIds } } });
     if (n !== input.payload.attachmentIds.length) throw new HttpError(400, 'ไฟล์แนบบางไฟล์ไม่พบ');
   }

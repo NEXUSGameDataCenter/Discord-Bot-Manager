@@ -43,7 +43,7 @@ function embedHasContent(e: Embed): boolean {
  * Cross-field validation. Per-field limits are enforced by zod; this checks the
  * combined limits, which must also be re-checked after template variables are filled in.
  */
-export function validateMessage(p: Pick<MessagePayload, 'content' | 'embeds' | 'buttons' | 'attachmentIds'>): string[] {
+export function validateMessage(p: Pick<MessagePayload, 'content' | 'embeds' | 'buttons' | 'attachmentIds'> & { imageUrls?: string[] }): string[] {
   const errors: string[] = [];
   const embeds = p.embeds ?? [];
   if (p.content.length > LIMITS.content) errors.push(`Content is ${p.content.length}/${LIMITS.content} characters`);
@@ -54,8 +54,9 @@ export function validateMessage(p: Pick<MessagePayload, 'content' | 'embeds' | '
     if (!embedHasContent(e)) errors.push(`Embed #${i + 1} is empty`);
   });
   if ((p.buttons ?? []).length > LIMITS.buttons) errors.push(`Too many buttons (max ${LIMITS.buttons})`);
-  if ((p.attachmentIds ?? []).length > LIMITS.attachments) errors.push(`Too many attachments (max ${LIMITS.attachments})`);
-  if (!p.content.trim() && embeds.length === 0 && (p.attachmentIds ?? []).length === 0) {
+  const files = (p.attachmentIds ?? []).length + (p.imageUrls ?? []).length;
+  if (files > LIMITS.attachments) errors.push(`Too many attachments + image links (max ${LIMITS.attachments})`);
+  if (!p.content.trim() && embeds.length === 0 && files === 0) {
     errors.push('Message needs content, an embed or an attachment');
   }
   return errors;

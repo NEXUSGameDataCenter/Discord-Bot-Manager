@@ -54,6 +54,7 @@ export default function AnnouncementsPage() {
   const [embeds, setEmbeds] = useState<EmbedDraft[]>([newEmbed()]);
   const [buttons, setButtons] = useState<{ label: string; url: string }[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   /* target */
   const [botId, setBotId] = useState('');
   const [targets, setTargets] = useState<TargetDraft[]>([]);
@@ -68,8 +69,8 @@ export default function AnnouncementsPage() {
   const [sending, setSending] = useState(false);
 
   const payload: MessagePayload = useMemo(
-    () => ({ content, embeds: embeds.map(toEmbed), buttons: buttons.filter((b) => b.label.trim() && b.url.trim()), attachmentIds: attachments.map((a) => a.id) }),
-    [content, embeds, buttons, attachments],
+    () => ({ content, embeds: embeds.map(toEmbed), buttons: buttons.filter((b) => b.label.trim() && b.url.trim()), attachmentIds: attachments.map((a) => a.id), imageUrls: imageUrls.map((u) => u.trim()).filter(Boolean) }),
+    [content, embeds, buttons, attachments, imageUrls],
   );
   const parsed = messagePayloadSchema.safeParse(payload);
   const payloadErrors = parsed.success ? [] : parsed.error.issues.map((i) => (i.path.length ? `${i.path.join('.')}: ${i.message}` : i.message));
@@ -136,7 +137,7 @@ export default function AnnouncementsPage() {
       {step === 1 && (
         <>
           <div className="split">
-            <Composer {...{ title, setTitle, content, setContent, embeds, setEmbeds, buttons, setButtons, attachments, setAttachments, embedTotal, payloadErrors }} />
+            <Composer {...{ title, setTitle, content, setContent, embeds, setEmbeds, buttons, setButtons, attachments, setAttachments, imageUrls, setImageUrls, embedTotal, payloadErrors }} />
             <Preview payload={payload} sample={targets[0]} attachments={attachments} />
           </div>
           <div style={{ marginTop: 14, textAlign: 'right' }}>
@@ -147,7 +148,7 @@ export default function AnnouncementsPage() {
 
       {step === 2 && (
         <>
-          <TargetPicker {...{ botId, setBotId, targets, setTargets, hasFiles: attachments.length > 0 }} />
+          <TargetPicker {...{ botId, setBotId, targets, setTargets, hasFiles: payload.attachmentIds.length + payload.imageUrls.length > 0 }} />
           <section className="card" style={{ marginTop: 14 }}>
             <h3>Mention Safety</h3>
             <label className="checkrow">
@@ -235,7 +236,8 @@ export default function AnnouncementsPage() {
 function Composer(p: {
   title: string; setTitle: (s: string) => void; content: string; setContent: (s: string) => void;
   embeds: EmbedDraft[]; setEmbeds: (e: EmbedDraft[]) => void; buttons: { label: string; url: string }[]; setButtons: (b: { label: string; url: string }[]) => void;
-  attachments: Attachment[]; setAttachments: React.Dispatch<React.SetStateAction<Attachment[]>>; embedTotal: number; payloadErrors: string[];
+  attachments: Attachment[]; setAttachments: React.Dispatch<React.SetStateAction<Attachment[]>>;
+  imageUrls: string[]; setImageUrls: React.Dispatch<React.SetStateAction<string[]>>; embedTotal: number; payloadErrors: string[];
 }) {
   const toast = useToast();
   const [showVars, setShowVars] = useState(false);
@@ -260,7 +262,7 @@ function Composer(p: {
 
   return (
     <section className="card">
-      <div className="field"><label>Internal title (ไม่แสดงใน Discord)</label><input className="input" maxLength={100} value={p.title} onChange={(e) => p.setTitle(e.target.value)} /></div>
+      <TitlePicker title={p.title} setTitle={p.setTitle} />
       <h3>Message Content</h3>
       <div className="field">
         <textarea maxLength={LIMITS.content} value={p.content} onChange={(e) => p.setContent(e.target.value)} />
@@ -318,12 +320,20 @@ function Composer(p: {
           <button className="ghost small" onClick={() => p.setAttachments((prev) => prev.filter((x) => x.id !== a.id))}>✕</button>
         </div>
       ))}
+      {p.imageUrls.map((u, i) => (
+        <div className="row" key={i} style={{ marginTop: 6, alignItems: 'center' }}>
+          <span className="sub">🖼</span>
+          <input className="input grow" placeholder="https://.../image.png" value={u} onChange={(x) => p.setImageUrls((prev) => prev.map((v, j) => (j === i ? x.target.value : v)))} />
+          <button className="ghost small" onClick={() => p.setImageUrls((prev) => prev.filter((_, j) => j !== i))}>✕</button>
+        </div>
+      ))}
       <div className="toolbar" style={{ marginTop: 10 }}>
         <button className="secondary small" disabled={p.embeds.length >= LIMITS.embeds} onClick={() => p.setEmbeds([...p.embeds, newEmbed()])}>＋ Add Embed</button>
         <button className="secondary small" disabled={p.buttons.length >= LIMITS.buttons} onClick={() => p.setButtons([...p.buttons, { label: '', url: '' }])}>↗ Link Button</button>
         <label className="secondary small" style={{ cursor: 'pointer', padding: '6px 9px', borderRadius: 9, background: '#202e49', border: '1px solid #35445f', fontSize: 12 }}>
           📎 Attachment<input type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
         </label>
+        <button className="secondary small" disabled={p.attachments.length + p.imageUrls.length >= LIMITS.attachments} onClick={() => p.setImageUrls((prev) => [...prev, ''])} title="Bot จะดาวน์โหลดรูปจากลิงก์แล้วแนบเป็นไฟล์ แสดงนอก Embed">🖼 รูปจากลิงก์</button>
         <button className="secondary small" onClick={() => setShowVars(!showVars)}>{'{ }'} Variables</button>
       </div>
       {showVars && (
@@ -371,6 +381,7 @@ function Preview({ payload, sample, attachments }: { payload: MessagePayload; sa
         ))}
         {!!r.buttons.length && <div className="btnrow">{r.buttons.map((b, i) => <span className="dbtn" key={i}>{b.label} ↗</span>)}</div>}
         {attachments.map((a) => <div key={a.id} className="sub">📎 {a.fileName}</div>)}
+        {payload.imageUrls.map((u, i) => <img key={i} src={u} alt="" style={{ display: 'block', maxWidth: 'min(100%, 400px)', maxHeight: 300, borderRadius: 8, marginTop: 8 }} />)}
       </div>
     </section>
   );
@@ -531,5 +542,34 @@ function TargetPicker({ botId, setBotId, targets, setTargets, hasFiles }: {
         </div>
       ))}
     </section>
+  );
+}
+
+const TITLE_PRESETS = ['Community Update', 'อัปเดตแพตช์', 'ประกาศกิจกรรม', 'ปิดปรับปรุงเซิร์ฟเวอร์', 'แจ้งปัญหา / แก้ไขบัค', 'โปรโมชั่น / เติมเงิน', 'แจกของรางวัล', 'กฎและข้อตกลง', 'ทดสอบระบบ'];
+const CUSTOM = '__custom__';
+
+/** Internal title: pick a preset (or a recently used title) or type your own. */
+function TitlePicker({ title, setTitle }: { title: string; setTitle: (s: string) => void }) {
+  const { data } = useApi<{ announcements: { title: string }[] }>('/api/announcements');
+  const recent = [...new Set((data?.announcements ?? []).map((a) => a.title))].filter((t) => !TITLE_PRESETS.includes(t)).slice(0, 8);
+  const known = TITLE_PRESETS.includes(title) || recent.includes(title);
+  const [custom, setCustom] = useState(!known);
+  return (
+    <div className="field">
+      <label>Internal title (ไม่แสดงใน Discord)</label>
+      <select
+        value={custom ? CUSTOM : title}
+        onChange={(e) => {
+          if (e.target.value === CUSTOM) { setCustom(true); return; }
+          setCustom(false);
+          setTitle(e.target.value);
+        }}
+      >
+        <optgroup label="หัวข้อมาตรฐาน">{TITLE_PRESETS.map((t) => <option key={t} value={t}>{t}</option>)}</optgroup>
+        {recent.length > 0 && <optgroup label="ใช้ล่าสุด">{recent.map((t) => <option key={t} value={t}>{t}</option>)}</optgroup>}
+        <option value={CUSTOM}>✏️ กำหนดเอง...</option>
+      </select>
+      {custom && <input className="input" style={{ marginTop: 6 }} maxLength={100} placeholder="พิมพ์หัวข้อเอง" value={title} autoFocus onChange={(e) => setTitle(e.target.value)} />}
+    </div>
   );
 }

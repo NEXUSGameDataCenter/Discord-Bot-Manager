@@ -38,6 +38,8 @@ export const messagePayloadBase = z.object({
   embeds: z.array(embedSchema).max(LIMITS.embeds).default([]),
   buttons: z.array(linkButtonSchema).max(LIMITS.buttons).default([]),
   attachmentIds: z.array(z.string().min(1)).max(LIMITS.attachments).default([]),
+  /** Images fetched by the bot and attached as files (shown outside any embed). */
+  imageUrls: z.array(httpUrl.refine((u) => /^https:\/\//i.test(u), 'Image links must use https://')).max(LIMITS.attachments).default([]),
 });
 export type MessagePayload = z.infer<typeof messagePayloadBase>;
 

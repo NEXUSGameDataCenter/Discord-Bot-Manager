@@ -50,7 +50,7 @@ export default function TrackingPage() {
       </div>
       <ErrorBox error={error} />
       {loading && !data ? <Loading /> : !list.length ? <Empty>ยังไม่มีประกาศ — <Link href="/announcements">สร้างประกาศ</Link></Empty> : !rows.length ? <Empty>ไม่มีประกาศในหมวดนี้</Empty> : null}
-      <div className="grid two">
+      <div className="grid">
         {rows.map((a) => {
           const st = stateOf(a);
           const [tone, text] = LABEL[st];
