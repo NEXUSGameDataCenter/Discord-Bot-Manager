@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { hasRole, type TeamRole } from '@nexus/shared';
-import { useApi } from '@/lib/client';
+import { prefetch, useApi } from '@/lib/client';
 import { NavIcon } from './NavIcon';
 
 type Toast = { text: string; error?: boolean } | null;
@@ -43,6 +43,8 @@ export function Shell({ user, children }: { user: ShellUser; children: React.Rea
     timer.current = setTimeout(() => setToast(null), 3500);
   }, []);
   const { data: overview } = useApi<{ failed7: number; bots: { status: string }[] }>('/api/overview');
+  // Most pages start from the bot list; load it once up front.
+  useEffect(() => prefetch('/api/bots'), []);
   const online = overview?.bots.some((b) => b.status === 'ONLINE');
   const active = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 
