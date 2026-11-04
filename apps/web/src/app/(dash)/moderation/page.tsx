@@ -60,7 +60,7 @@ export default function ModerationPage() {
                 <details className="more">
                 <summary>Reason presets ({draft.reasonPresets.length})</summary>
                 {draft.reasonPresets.map((r, i) => (
-                  <div className="row" key={i} style={{ padding: '3px 0' }}><span className="grow">{r}</span><button className="ghost small" onClick={() => set('reasonPresets', draft.reasonPresets.filter((_, j) => j !== i))}>✕</button></div>
+                  <div className="row" key={i} style={{ padding: '3px 0' }}><span className="grow">{r}</span><button className="ghost small" onClick={() => set('reasonPresets', draft.reasonPresets.filter((_, j) => j !== i))}>×</button></div>
                 ))}
                 <div className="row"><input className="input grow" maxLength={200} value={preset} onChange={(e) => setPreset(e.target.value)} placeholder="เพิ่มเหตุผล" /><button className="secondary small" disabled={!preset.trim() || draft.reasonPresets.length >= 20} onClick={() => { set('reasonPresets', [...draft.reasonPresets, preset.trim()]); setPreset(''); }}>＋</button></div>
                 </details>

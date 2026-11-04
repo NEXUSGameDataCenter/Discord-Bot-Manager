@@ -58,7 +58,7 @@ export default function TeamPage() {
     }
   }
   const avatar = (m: Member) => (
-    <div className="boticon" style={{ borderRadius: '50%', overflow: 'hidden' }}>{m.avatarAssetId ? <img src={`/api/assets/${m.avatarAssetId}`} alt="" /> : '♙'}</div>
+    <div className="boticon" style={{ borderRadius: '50%', overflow: 'hidden' }}>{m.avatarAssetId ? <img src={`/api/assets/${m.avatarAssetId}`} alt="" /> : (m.name ?? m.email)[0]?.toUpperCase()}</div>
   );
 
   return (
@@ -128,7 +128,7 @@ export default function TeamPage() {
 
           {isOwner && (
             <details className="more card" style={{ marginTop: 14 }}>
-              <summary>＋ เชิญด้วยลิงก์ (แทนการรอคำขอ)</summary>
+              <summary>+ เชิญด้วยลิงก์ (แทนการรอคำขอ)</summary>
               <p className="sub">สร้างลิงก์ใช้ครั้งเดียว อายุ 7 วัน แล้วส่งให้เขาเองทาง Discord · เขาจะตั้งชื่อและรหัสผ่านเองตอนเปิดลิงก์</p>
               <div className="inline">
                 <input className="input" id="invite-email" type="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />

@@ -4,6 +4,7 @@ import { PageHead, Loading, ErrorBox, Empty, useToast } from '@/components/Shell
 import { ImageCropper } from '@/components/ImageCropper';
 import { api, useApi, useEvents, statusClass } from '@/lib/client';
 import type { BotsResponse, BotRow } from '@/lib/types';
+import { NavIcon } from '@/components/NavIcon';
 
 function uptime(startedAt: string | null) {
   if (!startedAt) return '—';
@@ -62,7 +63,7 @@ export default function BotsPage() {
     <>
       <PageHead crumb="BOTS" title="จัดการ Bots" />
       <details className="more card" style={{ marginBottom: 14 }} open={!!data && !data.bots.length}>
-        <summary>＋ Add Bot</summary>
+        <summary>+ Add Bot</summary>
         <p className="sub">วาง Bot token จาก Developer Portal → Bot → Reset Token (เข้ารหัสเก็บ ไม่ส่งกลับมาที่เบราว์เซอร์)</p>
         <div className="row">
           <input className="input grow" type="password" autoComplete="off" placeholder="Bot token" value={token} onChange={(e) => setToken(e.target.value)} />
@@ -75,7 +76,7 @@ export default function BotsPage() {
         {data?.bots.map((b) => (
           <section className="card" key={b.id}>
             <div className="botrow" style={{ paddingTop: 0 }}>
-              <div className="boticon">{b.avatarUrl ? <img src={b.avatarUrl} alt="" /> : '♟'}</div>
+              <div className="boticon">{b.avatarUrl ? <img src={b.avatarUrl} alt="" /> : <NavIcon name="bot" />}</div>
               <div className="grow">
                 <strong>{b.username}</strong>
                 <small>{b.guildCount} servers</small>
@@ -92,9 +93,9 @@ export default function BotsPage() {
               {b.status === 'ONLINE' || b.status === 'STARTING' ? (
                 <button className="secondary small" onClick={() => act(b, 'stop')}>Ⅱ Stop</button>
               ) : (
-                <button className="secondary small" onClick={() => act(b, 'start')}>▶ Start</button>
+                <button className="secondary small" onClick={() => act(b, 'start')}>Start</button>
               )}
-              <button className="secondary small" onClick={() => act(b, 'restart')}>↻ Restart</button>
+              <button className="secondary small" onClick={() => act(b, 'restart')}>Restart</button>
               <a href={b.inviteUrl} target="_blank" rel="noreferrer"><button className="secondary small">↗ Invite</button></a>
               <details className="more menu">
                 <summary aria-label="More">⋯</summary>
@@ -143,7 +144,7 @@ function GlobalEditor({ bot, onClose }: { bot: BotRow; onClose: () => void }) {
   }
   return (
     <section className="card" style={{ marginTop: 14 }}>
-      <div className="switchline"><h3>Global Bot Identity · {bot.username}</h3><button className="ghost small" onClick={onClose}>✕</button></div>
+      <div className="switchline"><h3>Global Bot Identity · {bot.username}</h3><button className="ghost small" onClick={onClose}>×</button></div>
       <div className="notice">Global username/avatar ถูก rate-limit หนักโดย Discord · Banner และ About me ทั่วโลกแก้ได้ที่ Developer Portal</div>
       <div className="field"><label>Username</label><input className="input" maxLength={32} value={username} onChange={(e) => setUsername(e.target.value)} /></div>
       <div className="field"><label>Avatar · 1:1</label><ImageCropper aspect={1} outW={512} outH={512} onUploaded={(a) => setAvatar(a.id)} /></div>

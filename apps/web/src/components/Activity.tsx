@@ -2,15 +2,18 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import type { AuditRow } from '@/lib/types';
+import { NavIcon } from './NavIcon';
+
+const CAT_ICON: Record<string, string> = { ann: 'mega', team: 'team', bot: 'bot', server: 'server', mod: 'shield', sys: 'gear' };
 
 export type Cat = 'ann' | 'team' | 'bot' | 'server' | 'mod' | 'sys';
 export const CATS: Record<Cat, { label: string; color: string }> = {
-  ann: { label: '📢 ประกาศ', color: '#f472b6' },
-  team: { label: '👥 ทีม', color: '#34d399' },
-  bot: { label: '🤖 Bot', color: '#38e1ff' },
-  server: { label: '🖥 Server', color: '#60a5fa' },
-  mod: { label: '🛡 Moderation', color: '#a78bfa' },
-  sys: { label: '⚙ ระบบ', color: '#fbbf24' },
+  ann: { label: 'ประกาศ', color: '#f472b6' },
+  team: { label: 'ทีม', color: '#34d399' },
+  bot: { label: 'Bot', color: '#38e1ff' },
+  server: { label: 'Server', color: '#60a5fa' },
+  mod: { label: 'Moderation', color: '#a78bfa' },
+  sys: { label: 'ระบบ', color: '#fbbf24' },
 };
 type Tone = 'ok' | 'warn' | 'bad' | 'info' | 'grey';
 type View = { cat: Cat; icon: string; text: React.ReactNode; tone: Tone; label: string; bar?: number; link?: string };
@@ -137,7 +140,6 @@ function val(k: string, v: unknown): string {
 export function ActivityRow({ row, showEmail }: { row: AuditRow; showEmail?: boolean }) {
   const [open, setOpen] = useState(false);
   const v = describe(row);
-  const c = CATS[v.cat].color;
   const who = row.actor === 'system' ? 'ระบบอัตโนมัติ' : row.actorName || row.actorEmail || row.actor;
   const extra = [...Object.entries(row.targets ?? {}), ...Object.entries(row.detail ?? {})].filter(([k, x]) => !HIDE.has(k) && x !== null && x !== undefined && x !== '');
   const a = row.ann;
@@ -145,7 +147,7 @@ export function ActivityRow({ row, showEmail }: { row: AuditRow; showEmail?: boo
   return (
     <>
       <button className="arow" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className="aico" style={{ '--c': c } as React.CSSProperties}>{v.icon}</span>
+        <span className="aico"><NavIcon name={CAT_ICON[v.cat] ?? 'gear'} /></span>
         <span className="awhat">
           <span className="at">{v.text}</span>
           <span className="am">
@@ -153,7 +155,7 @@ export function ActivityRow({ row, showEmail }: { row: AuditRow; showEmail?: boo
             <b>{who}</b>
             {showEmail && row.actorEmail && row.actorName && <span>{row.actorEmail}</span>}
             <span>·</span>
-            <span style={{ color: c }}>{CATS[v.cat].label}</span>
+            <span>{CATS[v.cat].label}</span>
           </span>
         </span>
         <span className="aright">

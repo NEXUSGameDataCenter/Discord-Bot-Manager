@@ -19,12 +19,12 @@ function stateOf(a: Row): State {
   return 'done';
 }
 const LABEL: Record<State, [tone: string, text: string]> = {
-  done: ['ok', '✓ ส่งครบแล้ว'],
-  partial: ['warn', '⚠ สำเร็จบางส่วน'],
-  failed: ['bad', '✕ ล้มเหลว'],
-  sending: ['info', '⏳ กำลังส่ง'],
-  scheduled: ['info', '🗓 ตั้งเวลาไว้'],
-  deleted: ['grey', '🗑 ลบแล้ว'],
+  done: ['ok', 'ส่งครบแล้ว'],
+  partial: ['warn', 'สำเร็จบางส่วน'],
+  failed: ['bad', 'ล้มเหลว'],
+  sending: ['info', 'กำลังส่ง'],
+  scheduled: ['info', 'ตั้งเวลาไว้'],
+  deleted: ['grey', 'ลบแล้ว'],
   idle: ['grey', 'ยังไม่ได้ส่ง'],
 };
 const FILTERS: [Filter, string][] = [['all', 'ทั้งหมด'], ['done', 'ส่งครบ'], ['problem', 'มีปัญหา'], ['sending', 'กำลังส่ง / ตั้งเวลา'], ['deleted', 'ลบแล้ว']];

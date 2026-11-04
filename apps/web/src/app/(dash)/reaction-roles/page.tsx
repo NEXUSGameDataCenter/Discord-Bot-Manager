@@ -4,6 +4,7 @@ import { ROLE_MENU_MODES, roleMenuSchema, type RoleMenuInput, type RoleMenuOptio
 import { PageHead, Loading, Empty, useToast } from '@/components/Shell';
 import { GuildSelect, useGuildAssets, ChannelSelect, RoleSelect } from '@/components/GuildSelect';
 import { api, useApi, statusClass } from '@/lib/client';
+import { NavIcon } from '@/components/NavIcon';
 
 type Menu = RoleMenuInput & { id: string; status: string; lastError: string | null; messageId: string | null };
 const MODE_TEXT: Record<string, string> = {
@@ -43,7 +44,7 @@ export default function ReactionRolesPage() {
 
   return (
     <>
-      <PageHead crumb="REACTION ROLES" title="Reaction Roles" action={guildRefId && !edit ? <button onClick={() => setEdit(blank(guildRefId))}>＋ New menu</button> : undefined} />
+      <PageHead crumb="REACTION ROLES" title="Reaction Roles" action={guildRefId && !edit ? <button onClick={() => setEdit(blank(guildRefId))}>+ New menu</button> : undefined} />
       <section className="card" style={{ marginBottom: 14 }}><GuildSelect value={guildRefId} onChange={(id) => { setGuild(id); setEdit(null); }} /></section>
 
       {edit && (
@@ -80,10 +81,10 @@ export default function ReactionRolesPage() {
                     </select>
                   )}
                 </div>
-                <button className="ghost small" onClick={() => setEdit({ ...edit, options: edit.options.filter((_, j) => j !== i) })}>✕</button>
+                <button className="ghost small" onClick={() => setEdit({ ...edit, options: edit.options.filter((_, j) => j !== i) })}>×</button>
               </div>
             ))}
-            <button className="secondary small" disabled={edit.options.length >= 20} onClick={() => setEdit({ ...edit, options: [...edit.options, { roleId: '', label: '', emoji: '', style: 'SECONDARY' }] })}>＋ Add option</button>
+            <button className="secondary small" disabled={edit.options.length >= 20} onClick={() => setEdit({ ...edit, options: [...edit.options, { roleId: '', label: '', emoji: '', style: 'SECONDARY' }] })}>+ Add option</button>
             {check && !check.success && <div className="err" style={{ marginTop: 8 }}>{check.error.issues.map((i) => i.message).join(' · ')}</div>}
             <div className="row" style={{ marginTop: 12 }}>
               <button disabled={!check?.success} onClick={save}>{edit.id ? 'Update & re-post' : 'Post menu'}</button>
@@ -108,12 +109,12 @@ export default function ReactionRolesPage() {
         </div>
       )}
 
-      {guildRefId && !menus.data ? <Loading /> : !menus.data?.menus.length && !edit ? <Empty>ยังไม่มีเมนู — กด ＋ New menu</Empty> : null}
+      {guildRefId && !menus.data ? <Loading /> : !menus.data?.menus.length && !edit ? <Empty>ยังไม่มีเมนู — กด + New menu</Empty> : null}
       <div className="grid">
         {menus.data?.menus.map((m) => (
           <section className="card" key={m.id}>
             <div className="botrow" style={{ paddingTop: 0 }}>
-              <div className="boticon">◎</div>
+              <div className="boticon"><NavIcon name="react" /></div>
               <div className="grow">
                 <strong>{m.title}</strong>
                 <small>#{channels.find((c) => c.channelId === m.channelId)?.name ?? m.channelId} · {m.type} · {m.mode} · {m.options.length} roles</small>

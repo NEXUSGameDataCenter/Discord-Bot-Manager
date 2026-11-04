@@ -20,7 +20,7 @@ const P: Record<string, React.ReactNode> = {
 
 export function NavIcon({ name }: { name: string }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       {P[name] ?? P.dash}
     </svg>
   );

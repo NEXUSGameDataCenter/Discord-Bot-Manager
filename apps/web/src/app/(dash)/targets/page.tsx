@@ -4,6 +4,7 @@ import { PageHead, Loading, ErrorBox, Empty, useToast } from '@/components/Shell
 import { BotPicker } from '@/components/BotPicker';
 import { api, useApi } from '@/lib/client';
 import type { GuildRow } from '@/lib/types';
+import { NavIcon } from '@/components/NavIcon';
 
 type Group = { id: string; name: string; guildRefIds: string[] };
 
@@ -42,7 +43,7 @@ export default function TargetsPage() {
         {data?.groups.map((g) => (
           <section className="card" key={g.id}>
             <div className="botrow" style={{ paddingTop: 0 }}>
-              <div className="boticon">♧</div>
+              <div className="boticon"><NavIcon name="target" /></div>
               <div className="grow"><strong>{g.name}</strong><small>{g.guildRefIds.map((id) => nameOf(id) ?? '…').join(', ')}</small></div>
               <span className="status info">{g.guildRefIds.length} Servers</span>
               <button className="danger small" onClick={() => del(g)}>Delete</button>
@@ -51,7 +52,7 @@ export default function TargetsPage() {
         ))}
       </div>
       <section className="card" style={{ marginTop: 14 }}>
-        <h3>＋ New Group</h3>
+        <h3>+ New Group</h3>
         <div className="inline">
           <BotPicker value={botId} onChange={setBotId} />
           <input className="input" placeholder="Group name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />

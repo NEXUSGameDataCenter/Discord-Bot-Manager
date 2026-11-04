@@ -58,10 +58,10 @@ export default function WelcomePage() {
                       {[[0, 'ทันที'], [60, '1 นาที'], [300, '5 นาที'], [600, '10 นาที'], [1800, '30 นาที'], [3600, '1 ชั่วโมง'], [86400, '24 ชั่วโมง']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                   </div>
-                  <button className="ghost small" onClick={() => set('autoRoles', draft.autoRoles.filter((_, j) => j !== i))}>✕</button>
+                  <button className="ghost small" onClick={() => set('autoRoles', draft.autoRoles.filter((_, j) => j !== i))}>×</button>
                 </div>
               ))}
-              <button className="secondary small" disabled={draft.autoRoles.length >= 10} onClick={() => set('autoRoles', [...draft.autoRoles, { roleId: '', target: 'human', delaySec: 0 }])}>＋ Add auto role</button>
+              <button className="secondary small" disabled={draft.autoRoles.length >= 10} onClick={() => set('autoRoles', [...draft.autoRoles, { roleId: '', target: 'human', delaySec: 0 }])}>+ Add auto role</button>
             </section>
           </div>
           <div style={{ marginTop: 14, textAlign: 'right' }}><button disabled={saving || draft.autoRoles.some((r) => !r.roleId)} onClick={save}>{saving ? 'Saving…' : 'Save'}</button></div>

@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { PageHead, Loading, ErrorBox, Empty, useToast } from '@/components/Shell';
 import { api, useApi, fmtDate } from '@/lib/client';
+import { NavIcon } from '@/components/NavIcon';
 
 type S = { id: string; cron: string | null; runAt: string | null; timezone: string; active: boolean; lastRunAt: string | null; announcement: { id: string; title: string; status: string; _count: { targets: number } } };
 
@@ -35,7 +36,7 @@ export default function SchedulesPage() {
         {data?.schedules.map((s) => (
           <section className="card" key={s.id}>
             <div className="botrow" style={{ paddingTop: 0 }}>
-              <div className="boticon">◷</div>
+              <div className="boticon"><NavIcon name="clock" /></div>
               <div className="grow">
                 <strong>{s.announcement.title}</strong>
                 <small>{s.cron ? `cron ${s.cron}` : `once at ${fmtDate(s.runAt)}`} · {s.timezone} · {s.announcement._count.targets} channels · last run {fmtDate(s.lastRunAt)}</small>

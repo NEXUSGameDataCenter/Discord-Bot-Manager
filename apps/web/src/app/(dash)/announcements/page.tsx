@@ -14,6 +14,7 @@ import { PageHead, ErrorBox, useToast } from '@/components/Shell';
 import { BotPicker } from '@/components/BotPicker';
 import { api, useApi } from '@/lib/client';
 import type { ChannelRow, GuildRow } from '@/lib/types';
+import { NavIcon } from '@/components/NavIcon';
 
 /* ---------- draft types (form state, converted to the zod payload on submit) ---------- */
 type FieldDraft = { name: string; value: string; inline: boolean };
@@ -222,7 +223,7 @@ export default function AnnouncementsPage() {
             <div className="notice">ยืนยันการส่งไปยัง {serverCount} Servers และ {active.length} Channels ก่อนดำเนินการ</div>
             <label className="checkrow"><input type="checkbox" checked={finalConfirm} onChange={(e) => setFinalConfirm(e.target.checked)} /> ฉันตรวจสอบปลายทางและเนื้อหาเรียบร้อยแล้ว</label>
             <button disabled={sending || !active.length || !!payloadErrors.length || !!targetProblems.length || (timing === 'at' && !runAt)} onClick={submit}>
-              ➤ {timing === 'now' ? 'Queue Announcement' : 'Schedule Announcement'}
+              {timing === 'now' ? 'Queue Announcement' : 'Schedule Announcement'}
             </button>
           </section>
           <div className="toolbar" style={{ marginTop: 14 }}><button className="secondary" onClick={() => setStep(2)}>← Back to Targets</button></div>
@@ -323,11 +324,11 @@ function Composer(p: {
               <input className="input grow" placeholder="Field name" value={f.name} onChange={(x) => upd(i, { fields: e.fields.map((ff, kk) => (kk === k ? { ...ff, name: x.target.value } : ff)) })} />
               <input className="input grow" placeholder="Field value" value={f.value} onChange={(x) => upd(i, { fields: e.fields.map((ff, kk) => (kk === k ? { ...ff, value: x.target.value } : ff)) })} />
               <label className="checkrow"><input type="checkbox" checked={f.inline} onChange={(x) => upd(i, { fields: e.fields.map((ff, kk) => (kk === k ? { ...ff, inline: x.target.checked } : ff)) })} /> inline</label>
-              <button className="ghost small" onClick={() => upd(i, { fields: e.fields.filter((_, kk) => kk !== k) })}>✕</button>
+              <button className="ghost small" onClick={() => upd(i, { fields: e.fields.filter((_, kk) => kk !== k) })}>×</button>
             </div>
           ))}
           <div className="toolbar" style={{ marginTop: 8 }}>
-            <button className="secondary small" disabled={e.fields.length >= LIMITS.fields} onClick={() => upd(i, { fields: [...e.fields, { name: '', value: '', inline: false }] })}>＋ Field</button>
+            <button className="secondary small" disabled={e.fields.length >= LIMITS.fields} onClick={() => upd(i, { fields: [...e.fields, { name: '', value: '', inline: false }] })}>+ Field</button>
             <button className="danger small" onClick={() => p.setEmbeds(p.embeds.filter((_, j) => j !== i))}>Remove embed</button>
           </div>
         </details>
@@ -336,29 +337,29 @@ function Composer(p: {
         <div className="row" key={i} style={{ marginTop: 6 }}>
           <input className="input grow" placeholder="Button label" maxLength={LIMITS.buttonLabel} value={b.label} onChange={(x) => p.setButtons(p.buttons.map((bb, j) => (j === i ? { ...bb, label: x.target.value } : bb)))} />
           <input className="input grow" placeholder="https://" value={b.url} onChange={(x) => p.setButtons(p.buttons.map((bb, j) => (j === i ? { ...bb, url: x.target.value } : bb)))} />
-          <button className="ghost small" onClick={() => p.setButtons(p.buttons.filter((_, j) => j !== i))}>✕</button>
+          <button className="ghost small" onClick={() => p.setButtons(p.buttons.filter((_, j) => j !== i))}>×</button>
         </div>
       ))}
       {p.attachments.map((a) => (
         <div className="row" key={a.id} style={{ marginTop: 6 }}>
-          <span className="grow sub">📎 {a.fileName} · {(a.size / 1024).toFixed(0)} KB</span>
-          <button className="ghost small" onClick={() => p.setAttachments((prev) => prev.filter((x) => x.id !== a.id))}>✕</button>
+          <span className="grow sub">{a.fileName} · {(a.size / 1024).toFixed(0)} KB</span>
+          <button className="ghost small" onClick={() => p.setAttachments((prev) => prev.filter((x) => x.id !== a.id))}>×</button>
         </div>
       ))}
       {p.imageUrls.map((u, i) => (
         <div className="row" key={i} style={{ marginTop: 6, alignItems: 'center' }}>
-          <span className="sub">🖼</span>
+          
           <input className="input grow" placeholder="https://.../image.png" value={u} onChange={(x) => p.setImageUrls((prev) => prev.map((v, j) => (j === i ? x.target.value : v)))} />
-          <button className="ghost small" onClick={() => p.setImageUrls((prev) => prev.filter((_, j) => j !== i))}>✕</button>
+          <button className="ghost small" onClick={() => p.setImageUrls((prev) => prev.filter((_, j) => j !== i))}>×</button>
         </div>
       ))}
       <div className="toolbar" style={{ marginTop: 10 }}>
-        <button className="secondary small" disabled={p.embeds.length >= LIMITS.embeds} onClick={() => p.setEmbeds([...p.embeds, newEmbed()])}>＋ Add Embed</button>
+        <button className="secondary small" disabled={p.embeds.length >= LIMITS.embeds} onClick={() => p.setEmbeds([...p.embeds, newEmbed()])}>+ Add Embed</button>
         <button className="secondary small" disabled={p.buttons.length >= LIMITS.buttons} onClick={() => p.setButtons([...p.buttons, { label: '', url: '' }])}>↗ Link Button</button>
         <label className="secondary small" style={{ cursor: 'pointer', padding: '6px 9px', borderRadius: 9, background: '#202e49', border: '1px solid #35445f', fontSize: 12 }}>
-          📎 Attachment / วางรูป (Ctrl+V)<input type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
+          Attachment / วางรูป (Ctrl+V)<input type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
         </label>
-        <button className="secondary small" disabled={p.attachments.length + p.imageUrls.length >= LIMITS.attachments} onClick={() => p.setImageUrls((prev) => [...prev, ''])} title="Bot จะดาวน์โหลดรูปจากลิงก์แล้วแนบเป็นไฟล์ แสดงนอก Embed">🖼 รูปจากลิงก์</button>
+        <button className="secondary small" disabled={p.attachments.length + p.imageUrls.length >= LIMITS.attachments} onClick={() => p.setImageUrls((prev) => [...prev, ''])} title="Bot จะดาวน์โหลดรูปจากลิงก์แล้วแนบเป็นไฟล์ แสดงนอก Embed">รูปจากลิงก์</button>
         <button className="secondary small" onClick={() => setShowVars(!showVars)}>{'{ }'} Variables</button>
       </div>
       {showVars && (
@@ -383,7 +384,7 @@ function Preview({ payload, sample, attachments }: { payload: MessagePayload; sa
       <h3>Discord Live Preview {sample && <small className="muted">· {sample.guildName}</small>}</h3>
       <div className="preview">
         <div className="botrow" style={{ paddingTop: 0, border: 0 }}>
-          <div className="boticon">♟</div>
+          <div className="boticon"><NavIcon name="bot" /></div>
           <div><strong>{sample?.mode === 'WEBHOOK' ? sample.webhookName || 'Webhook' : 'Nexus Bot'} <span className="status info">{sample?.mode === 'WEBHOOK' ? 'APP' : 'BOT'}</span></strong><small>Today at {time}</small></div>
         </div>
         {sample?.pingRoleId && <p className="sub">@role</p>}
@@ -407,7 +408,7 @@ function Preview({ payload, sample, attachments }: { payload: MessagePayload; sa
         {!!r.buttons.length && <div className="btnrow">{r.buttons.map((b, i) => <span className="dbtn" key={i}>{b.label} ↗</span>)}</div>}
         {attachments.map((a) => (/\.(png|jpe?g|gif|webp)$/i.test(a.fileName)
           ? <img key={a.id} src={`/api/assets/${a.id}`} alt={a.fileName} style={{ display: 'block', maxWidth: 'min(100%, 400px)', maxHeight: 300, borderRadius: 8, marginTop: 8 }} />
-          : <div key={a.id} className="sub">📎 {a.fileName}</div>))}
+          : <div key={a.id} className="sub">{a.fileName}</div>))}
         {payload.imageUrls.map((u, i) => <img key={i} src={u} alt="" style={{ display: 'block', maxWidth: 'min(100%, 400px)', maxHeight: 300, borderRadius: 8, marginTop: 8 }} />)}
       </div>
     </section>
@@ -517,7 +518,7 @@ function TargetPicker({ botId, setBotId, targets, setTargets, hasFiles }: {
               <optgroup key={cat} label={cat}>
                 {list.map((c) => (
                   <option key={c.channelId} value={c.channelId} disabled={exists(guildRefId, c.channelId)}>
-                    {c.type === 5 ? '📢' : '#'} {c.name}{c.channelId === guild?.defaultChannelId ? ' (default)' : ''}
+                    #{c.name}{c.channelId === guild?.defaultChannelId ? ' (default)' : ''}
                   </option>
                 ))}
               </optgroup>
@@ -533,8 +534,8 @@ function TargetPicker({ botId, setBotId, targets, setTargets, hasFiles }: {
         </div>
       </div>
       <div className="toolbar">
-        <button disabled={!channelId} onClick={add}>＋ Add Target</button>
-        <button className="secondary small" disabled={!guilds.data?.guilds.length} onClick={() => addDefaults(guilds.data!.guilds.map((g) => g.id))}>＋ All servers (default channel)</button>
+        <button disabled={!channelId} onClick={add}>+ Add Target</button>
+        <button className="secondary small" disabled={!guilds.data?.guilds.length} onClick={() => addDefaults(guilds.data!.guilds.map((g) => g.id))}>+ All servers (default channel)</button>
         <select style={{ width: 'auto' }} value="" onChange={(e) => { const g = groups.data?.groups.find((x) => x.id === e.target.value); if (g) void addDefaults(g.guildRefIds); }}>
           <option value="">Load Target Group…</option>
           {groups.data?.groups.map((g) => <option key={g.id} value={g.id}>{g.name} ({g.guildRefIds.length})</option>)}
@@ -565,7 +566,7 @@ function TargetPicker({ botId, setBotId, targets, setTargets, hasFiles }: {
               <label className="checkrow"><input type="checkbox" checked={t.skip} onChange={(e) => patch(i, { skip: e.target.checked })} /> Skip this server</label>
             </details>
           </div>
-          <button className="ghost small" onClick={() => setTargets(targets.filter((_, j) => j !== i))}>✕</button>
+          <button className="ghost small" onClick={() => setTargets(targets.filter((_, j) => j !== i))}>×</button>
         </div>
       ))}
     </section>
@@ -594,7 +595,7 @@ function TitlePicker({ title, setTitle }: { title: string; setTitle: (s: string)
       >
         <optgroup label="หัวข้อมาตรฐาน">{TITLE_PRESETS.map((t) => <option key={t} value={t}>{t}</option>)}</optgroup>
         {recent.length > 0 && <optgroup label="ใช้ล่าสุด">{recent.map((t) => <option key={t} value={t}>{t}</option>)}</optgroup>}
-        <option value={CUSTOM}>✏️ กำหนดเอง...</option>
+        <option value={CUSTOM}>กำหนดเอง...</option>
       </select>
       {custom && <input className="input" style={{ marginTop: 6 }} maxLength={100} placeholder="พิมพ์หัวข้อเอง" value={title} autoFocus onChange={(e) => setTitle(e.target.value)} />}
     </div>

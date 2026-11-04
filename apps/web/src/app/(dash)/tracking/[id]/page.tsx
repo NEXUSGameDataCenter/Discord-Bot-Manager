@@ -76,8 +76,8 @@ export default function TrackingDetail({ params }: { params: Promise<{ id: strin
         ))}
       </section>
       <div className="toolbar" style={{ marginTop: 12 }}>
-        <button disabled={!failed} onClick={retry}>↻ Retry Failed Only ({failed})</button>
-        <button className="secondary" disabled={!data.sentTotal} onClick={() => setEditText(data.announcement.payload.content ?? '')}>✎ Edit everywhere</button>
+        <button disabled={!failed} onClick={retry}>Retry Failed Only ({failed})</button>
+        <button className="secondary" disabled={!data.sentTotal} onClick={() => setEditText(data.announcement.payload.content ?? '')}>Edit everywhere</button>
         <button className="danger" disabled={!data.sentTotal} onClick={deleteEverywhere}>Delete everywhere ({data.sentTotal})</button>
       </div>
       {editText !== null && (

@@ -4,6 +4,7 @@ import { PageHead, Loading, ErrorBox, Empty, useToast } from '@/components/Shell
 import { BotPicker } from '@/components/BotPicker';
 import { api, useApi, useEvents, fmtDate, statusClass } from '@/lib/client';
 import type { GuildRow } from '@/lib/types';
+import { NavIcon } from '@/components/NavIcon';
 
 export default function ServersPage() {
   const toast = useToast();
@@ -78,7 +79,7 @@ export default function ServersPage() {
         {rows.map((g) => (
           <section className="card" key={g.id}>
             <div className="serverrow" style={{ paddingTop: 0 }}>
-              <div className="boticon">{g.iconUrl ? <img src={g.iconUrl} alt="" /> : '▤'}</div>
+              <div className="boticon">{g.iconUrl ? <img src={g.iconUrl} alt="" /> : <NavIcon name="server" />}</div>
               <div className="grow">
                 <strong>{g.name}</strong>
                 <small>{g.memberCount.toLocaleString()} Members · Joined {fmtDate(g.joinedAt)}</small>
@@ -88,7 +89,7 @@ export default function ServersPage() {
             </div>
             {g.missingPerms.length > 0 && (
               <details className="more">
-                <summary>⚠ ขาดสิทธิ์ {g.missingPerms.length} รายการ — ดูวิธีแก้</summary>
+                <summary>ขาดสิทธิ์ {g.missingPerms.length} รายการ — ดูวิธีแก้</summary>
                 <div className="notice">
                   {g.missingPerms.map((p) => (
                     <div key={p.name}>ขาด <b>{p.name}</b> — {p.fix}</div>
@@ -104,7 +105,7 @@ export default function ServersPage() {
               <select value={g.defaultChannelId ?? ''} onChange={(e) => setDefault(g, e.target.value)}>
                 <option value="">— none —</option>
                 {g.sendableChannels.map((c) => (
-                  <option key={c.channelId} value={c.channelId}>{c.type === 5 ? '📢' : '#'} {c.name}</option>
+                  <option key={c.channelId} value={c.channelId}>#{c.name}</option>
                 ))}
               </select>
             </div>

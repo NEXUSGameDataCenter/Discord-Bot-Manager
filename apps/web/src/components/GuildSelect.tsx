@@ -39,7 +39,7 @@ export function ChannelSelect({ channels, value, onChange, placeholder = '— �
   return (
     <select value={value ?? ''} onChange={(e) => onChange(e.target.value || null)}>
       <option value="">{placeholder}</option>
-      {channels.map((c) => <option key={c.channelId} value={c.channelId}>{c.type === 5 ? '📢' : '#'} {c.name}{c.parentName ? ` · ${c.parentName}` : ''}</option>)}
+      {channels.map((c) => <option key={c.channelId} value={c.channelId}>#{c.name}{c.parentName ? ` · ${c.parentName}` : ''}</option>)}
     </select>
   );
 }

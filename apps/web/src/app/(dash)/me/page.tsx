@@ -52,7 +52,7 @@ export default function MePage() {
           </div>
           <button disabled={saving || !name.trim()} onClick={save}>{saving ? 'Saving…' : 'Save'}</button>
           <details className="more" style={{ marginTop: 16 }} open={pw.data ? !pw.data.me.hasPassword : false}>
-            <summary>{pw.data && !pw.data.me.hasPassword ? '⚠ ตั้งรหัสผ่าน (ยังไม่ได้ตั้ง)' : 'เปลี่ยนรหัสผ่าน'}</summary>
+            <summary>{pw.data && !pw.data.me.hasPassword ? 'ตั้งรหัสผ่าน (ยังไม่ได้ตั้ง)' : 'เปลี่ยนรหัสผ่าน'}</summary>
             <div className="authform" style={{ marginTop: 8 }}>
               {pw.data?.me.hasPassword && <input className="input" id="pw-current" type="password" autoComplete="current-password" placeholder="รหัสผ่านปัจจุบัน" value={current} onChange={(e) => setCurrent(e.target.value)} />}
               <input className="input" id="pw-next" type="password" autoComplete="new-password" minLength={8} placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)" value={next} onChange={(e) => setNext(e.target.value)} />
@@ -64,7 +64,7 @@ export default function MePage() {
         <section className="card">
           <h3>Preview</h3>
           <div className="preview" style={{ textAlign: 'center' }}>
-            <div className="profileavatar" style={{ margin: '0 auto', overflow: 'hidden' }}>{avatarAssetId ? <img src={`/api/assets/${avatarAssetId}`} alt="" /> : '♙'}</div>
+            <div className="profileavatar" style={{ margin: '0 auto', overflow: 'hidden' }}>{avatarAssetId ? <img src={`/api/assets/${avatarAssetId}`} alt="" /> : '?'}</div>
             <h2>{name || me.email}</h2>
             <small className="muted">{me.role} · {me.email}</small>
           </div>
