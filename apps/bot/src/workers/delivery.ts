@@ -101,6 +101,14 @@ async function send(d: LoadedDelivery): Promise<{ messageId: string; webhookId: 
   });
   const prefix = [target.pingRoleId ? `<@&${target.pingRoleId}>` : '', target.extraText ?? ''].filter(Boolean).join(' ');
   rendered.content = [prefix, rendered.content].filter(Boolean).join('\n');
+  // The @everyone checkbox is the single source of truth: ticked → the tag is always there,
+  // unticked → no @everyone/@here text at all (not even as plain, non-pinging text).
+  const tag = /@(everyone|here)\b/;
+  if (a.allowEveryone) {
+    if (!tag.test(rendered.content)) rendered.content = ['@everyone', rendered.content].filter(Boolean).join('\n');
+  } else {
+    rendered.content = rendered.content.replace(/@(everyone|here)\b[ \t]*\n?/g, '').trim();
+  }
   const errors = validateMessage(rendered);
   if (errors.length) throw new FatalError(`ข้อความเกินขีดจำกัดหลังแทนตัวแปร: ${errors.join('; ')}`);
 
