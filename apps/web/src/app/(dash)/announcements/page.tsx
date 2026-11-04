@@ -243,8 +243,8 @@ function Composer(p: {
   const [showVars, setShowVars] = useState(false);
   const upd = (i: number, patch: Partial<EmbedDraft>) => p.setEmbeds(p.embeds.map((e, j) => (j === i ? { ...e, ...patch } : e)));
 
-  async function upload(files: FileList | null) {
-    let count = p.attachments.length;
+  async function upload(files: FileList | File[] | null) {
+    let count = p.attachments.length + p.imageUrls.length;
     for (const f of Array.from(files ?? [])) {
       if (count >= LIMITS.attachments) return toast(`แนบได้สูงสุด ${LIMITS.attachments} ไฟล์`, true);
       count++;
@@ -260,8 +260,33 @@ function Composer(p: {
     }
   }
 
+  // Paste (Ctrl+V) or drop an image anywhere in the composer, like Discord/Facebook.
+  function onPaste(e: React.ClipboardEvent) {
+    const files = Array.from(e.clipboardData.files);
+    if (files.length) {
+      e.preventDefault();
+      void upload(files.map((f, i) => (f.name && f.name !== 'image.png' ? f : new File([f], `pasted-${Date.now()}-${i + 1}.${(f.type.split('/')[1] ?? 'png').replace('jpeg', 'jpg')}`, { type: f.type }))));
+      return;
+    }
+    // Copied a picture from a site that only exposes its address: use it as an image link.
+    const html = e.clipboardData.getData('text/html');
+    const src = /<img[^>]+src="(https:\/\/[^"]+)"/i.exec(html)?.[1];
+    if (src && !e.clipboardData.getData('text/plain').trim()) {
+      e.preventDefault();
+      if (p.attachments.length + p.imageUrls.length >= LIMITS.attachments) return toast(`แนบได้สูงสุด ${LIMITS.attachments} ไฟล์`, true);
+      p.setImageUrls((prev) => [...prev, src.replace(/&amp;/g, '&')]);
+    }
+  }
+  const [dragging, setDragging] = useState(false);
+
   return (
-    <section className="card">
+    <section
+      className={`card ${dragging ? 'dropzone' : ''}`}
+      onPaste={onPaste}
+      onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDragging(true); } }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false); }}
+      onDrop={(e) => { if (e.dataTransfer.files.length) { e.preventDefault(); setDragging(false); void upload(e.dataTransfer.files); } }}
+    >
       <TitlePicker title={p.title} setTitle={p.setTitle} />
       <h3>Message Content</h3>
       <div className="field">
@@ -331,7 +356,7 @@ function Composer(p: {
         <button className="secondary small" disabled={p.embeds.length >= LIMITS.embeds} onClick={() => p.setEmbeds([...p.embeds, newEmbed()])}>＋ Add Embed</button>
         <button className="secondary small" disabled={p.buttons.length >= LIMITS.buttons} onClick={() => p.setButtons([...p.buttons, { label: '', url: '' }])}>↗ Link Button</button>
         <label className="secondary small" style={{ cursor: 'pointer', padding: '6px 9px', borderRadius: 9, background: '#202e49', border: '1px solid #35445f', fontSize: 12 }}>
-          📎 Attachment<input type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
+          📎 Attachment / วางรูป (Ctrl+V)<input type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
         </label>
         <button className="secondary small" disabled={p.attachments.length + p.imageUrls.length >= LIMITS.attachments} onClick={() => p.setImageUrls((prev) => [...prev, ''])} title="Bot จะดาวน์โหลดรูปจากลิงก์แล้วแนบเป็นไฟล์ แสดงนอก Embed">🖼 รูปจากลิงก์</button>
         <button className="secondary small" onClick={() => setShowVars(!showVars)}>{'{ }'} Variables</button>
@@ -380,7 +405,9 @@ function Preview({ payload, sample, attachments }: { payload: MessagePayload; sa
           </div>
         ))}
         {!!r.buttons.length && <div className="btnrow">{r.buttons.map((b, i) => <span className="dbtn" key={i}>{b.label} ↗</span>)}</div>}
-        {attachments.map((a) => <div key={a.id} className="sub">📎 {a.fileName}</div>)}
+        {attachments.map((a) => (/\.(png|jpe?g|gif|webp)$/i.test(a.fileName)
+          ? <img key={a.id} src={`/api/assets/${a.id}`} alt={a.fileName} style={{ display: 'block', maxWidth: 'min(100%, 400px)', maxHeight: 300, borderRadius: 8, marginTop: 8 }} />
+          : <div key={a.id} className="sub">📎 {a.fileName}</div>))}
         {payload.imageUrls.map((u, i) => <img key={i} src={u} alt="" style={{ display: 'block', maxWidth: 'min(100%, 400px)', maxHeight: 300, borderRadius: 8, marginTop: 8 }} />)}
       </div>
     </section>
