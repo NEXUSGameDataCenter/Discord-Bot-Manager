@@ -80,7 +80,6 @@ export function Shell({ user, children }: { user: ShellUser; children: React.Rea
               <img src="/logo.png" alt="Nexus" width={32} height={32} />
               <span><b>Nexus</b><small>Bot control</small></span>
             </Link>
-            <span className="hide-mbar"><Bell /></span>
           </div>
           {overview && (
             <div className={`botstate ${onlineCount ? '' : 'off'}`}><i />{bots.length ? `Bots ออนไลน์ ${onlineCount}/${bots.length}` : 'ยังไม่มี Bot'}</div>
@@ -122,7 +121,7 @@ export function Shell({ user, children }: { user: ShellUser; children: React.Rea
             </div>
           </div>
         </aside>
-        <main className="main">{children}</main>
+        <main className="main"><div className="topbell"><Bell /></div>{children}</main>
       </div>
       {toast && <div className={`toast ${toast.error ? 'error' : ''}`} role="status">{toast.text}</div>}
     </ToastCtx.Provider>
