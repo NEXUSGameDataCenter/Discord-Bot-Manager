@@ -266,3 +266,4 @@ details.more>summary{color:var(--t2);font-weight:400;font-size:13px}
 .phactions>.toolbar,.phactions>a,.phactions>button{margin:0}
 .topbell .bpanel,.mbar .bpanel{left:auto;right:0}
 @media(max-width:900px){.topbell{display:none}}
+.main>.pagehead{position:relative;z-index:60}.bpanel{z-index:70}
