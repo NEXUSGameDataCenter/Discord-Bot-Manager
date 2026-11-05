@@ -121,7 +121,7 @@ export function Shell({ user, children }: { user: ShellUser; children: React.Rea
             </div>
           </div>
         </aside>
-        <main className="main"><div className="topbell"><Bell /></div>{children}</main>
+        <main className="main">{children}</main>
       </div>
       {toast && <div className={`toast ${toast.error ? 'error' : ''}`} role="status">{toast.text}</div>}
     </ToastCtx.Provider>
@@ -138,7 +138,10 @@ export function PageHead({ crumb, title, sub, action }: { crumb: string; title: 
           <h1>{title}</h1>
           {sub && <p>{sub}</p>}
         </div>
-        {action}
+        <div className="phactions">
+          {action}
+          <span className="topbell"><Bell /></span>
+        </div>
       </div>
     </>
   );
