@@ -5,7 +5,7 @@ import { env } from './env';
 import { logger } from './logger';
 import { publish } from './redis';
 import { refreshChannels, syncAllGuilds, upsertGuild } from './guilds';
-import { profileQueue, RETRY_OPTS } from './queues';
+import { notify, profileQueue, RETRY_OPTS } from './queues';
 import { onMemberAdd, onMemberRemove } from './modules/welcome';
 import { onReaction, onRoleButton } from './modules/roleMenus';
 import { onMessage } from './modules/honeypot';
@@ -13,6 +13,28 @@ import { onCommand, onReasonAutocomplete, registerCommands } from './modules/mod
 
 const clients = new Map<string, Client>();
 const refreshTimers = new Map<string, NodeJS.Timeout>();
+/** Bots whose disconnect lasted long enough to notify; cleared when they reconnect. */
+const offlineTimers = new Map<string, NodeJS.Timeout>();
+const notifiedOffline = new Set<string>();
+const OFFLINE_ALERT_MS = 5 * 60_000;
+
+function watchDisconnect(botId: string, name: string) {
+  if (offlineTimers.has(botId)) return;
+  offlineTimers.set(botId, setTimeout(() => {
+    offlineTimers.delete(botId);
+    const c = clients.get(botId);
+    // Stopped on purpose, or already reconnected.
+    if (!c || (c.isReady() && c.ws.status === 0)) return;
+    notifiedOffline.add(botId);
+    notify({ kind: 'bot_status', title: `Bot ${name} offline`, body: 'ขาดการเชื่อมต่อเกิน 5 นาที', link: '/bots', roles: ['ADMIN'], urgent: true, dedupeKey: `bot-off-${botId}` });
+  }, OFFLINE_ALERT_MS));
+}
+
+function backOnline(botId: string, name: string) {
+  clearTimeout(offlineTimers.get(botId));
+  offlineTimers.delete(botId);
+  if (notifiedOffline.delete(botId)) notify({ kind: 'bot_status', title: `Bot ${name} กลับมาออนไลน์`, link: '/bots', roles: ['ADMIN'], dedupeKey: `bot-on-${botId}` });
+}
 
 export function getClient(botId: string): Client<true> {
   const c = clients.get(botId);
@@ -72,6 +94,7 @@ export async function startBot(botId: string): Promise<void> {
 
   client.once(Events.ClientReady, async (c) => {
     logger.info({ botId, user: c.user.tag, guilds: c.guilds.cache.size }, 'bot ready');
+    backOnline(botId, c.user.username);
     await setStatus(botId, 'ONLINE', {
       startedAt: new Date(),
       username: c.user.username,
@@ -127,7 +150,12 @@ export async function startBot(botId: string): Promise<void> {
   client.on(Events.GuildRoleUpdate, (_o, r) => scheduleRefresh(botId, r.guild));
   client.on(Events.GuildRoleDelete, (r) => scheduleRefresh(botId, r.guild));
   client.on(Events.Error, (err) => logger.error({ err, botId }, 'client error'));
-  client.on(Events.ShardDisconnect, () => publish({ type: 'bot', botId, status: 'RECONNECTING' }));
+  client.on(Events.ShardDisconnect, () => {
+    publish({ type: 'bot', botId, status: 'RECONNECTING' });
+    watchDisconnect(botId, client.user?.username ?? bot.username);
+  });
+  client.on(Events.ShardResume, () => backOnline(botId, client.user?.username ?? bot.username));
+  client.on(Events.ShardReady, () => backOnline(botId, client.user?.username ?? bot.username));
 
   try {
     await client.login(token);
@@ -137,6 +165,7 @@ export async function startBot(botId: string): Promise<void> {
     const msg = err instanceof Error ? err.message : String(err);
     const intentHint = /disallowed intents/i.test(msg) ? 'เปิด Server Members Intent ใน Developer Portal → Bot → Privileged Gateway Intents' : null;
     logger.error({ botId, msg }, 'login failed');
+    notify({ kind: 'bot_status', title: `Bot ${bot.username} เริ่มทำงานไม่ได้`, body: intentHint ?? msg.slice(0, 160), link: '/bots', roles: ['ADMIN'], urgent: true, dedupeKey: `bot-err-${botId}` });
     await setStatus(botId, 'ERROR', { lastError: intentHint ?? (/token/i.test(msg) ? 'Token ไม่ถูกต้องหรือถูก reset แล้ว' : msg) });
   }
 }
@@ -144,6 +173,9 @@ export async function startBot(botId: string): Promise<void> {
 export async function stopBot(botId: string): Promise<void> {
   const c = clients.get(botId);
   clients.delete(botId);
+  clearTimeout(offlineTimers.get(botId));
+  offlineTimers.delete(botId);
+  notifiedOffline.delete(botId);
   if (c) await c.destroy();
   await setStatus(botId, 'OFFLINE', { pingMs: null, startedAt: null });
 }

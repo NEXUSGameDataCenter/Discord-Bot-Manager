@@ -12,5 +12,8 @@ export const env = z
     HEALTH_PORT: z.coerce.number().int().default(8081),
     DELIVERY_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(5),
     LOG_LEVEL: z.string().default('info'),
+    VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().default('mailto:admin@example.com'),
   })
   .parse(process.env);

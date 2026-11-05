@@ -361,6 +361,8 @@ model TeamMember {
   /// Note written by the person when requesting access
   requestNote   String?
   lastLogin     DateTime?
+  /// Per-member notification settings (see @nexus/shared resolvePrefs)
+  notifyPrefs   Json?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
@@ -377,4 +379,31 @@ model MagicToken {
   createdAt DateTime  @default(now())
 
   @@index([email, createdAt])
+}
+
+/// In-app notification for one team member (bell). Kept 30 days.
+model Notification {
+  id        String    @id @default(cuid())
+  email     String
+  kind      String
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
+}
+
+/// A browser that agreed to receive Web Push for a team member.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  email     String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }

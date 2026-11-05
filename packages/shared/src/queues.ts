@@ -4,6 +4,7 @@ export const QUEUES = {
   dispatch: 'announcement-dispatch',
   delivery: 'delivery',
   manage: 'announcement-manage',
+  notify: 'notify',
 } as const;
 
 export type ControlJob =
@@ -28,7 +29,8 @@ export type NexusEvent =
   | { type: 'bot'; botId: string; status: string; pingMs?: number | null }
   | { type: 'delivery'; announcementId: string; deliveryId: string; status: string }
   | { type: 'profile'; guildRefId: string; status: string }
-  | { type: 'guilds'; botId: string };
+  | { type: 'guilds'; botId: string }
+  | { type: 'notify'; emails: string[] };
 
 export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 export const IMAGE_MAX_BYTES = 8 * 1024 * 1024;

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { PageHead, useToast, useMe } from '@/components/Shell';
 import { ImageCropper } from '@/components/ImageCropper';
 import { api, useApi } from '@/lib/client';
+import { NotifySettings } from '@/components/NotifySettings';
 
 export default function MePage() {
   const toast = useToast();
@@ -70,6 +71,7 @@ export default function MePage() {
           </div>
         </section>
       </div>
+      <NotifySettings />
     </>
   );
 }

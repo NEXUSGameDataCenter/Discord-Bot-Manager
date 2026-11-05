@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
-export const metadata: Metadata = { title: 'Nexus Manager', description: 'Nexus Discord bot control center' };
+export const metadata: Metadata = { title: 'Nexus Manager', description: 'Nexus Discord bot control center', manifest: '/manifest.webmanifest', appleWebApp: { capable: true, title: 'Nexus', statusBarStyle: 'black-translucent' } };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0e0f11' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

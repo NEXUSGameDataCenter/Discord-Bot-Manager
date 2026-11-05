@@ -28,6 +28,7 @@ import {
   type PermName,
 } from '@nexus/shared';
 import { connection, publish } from '../redis';
+import { notify } from '../queues';
 import { logger } from '../logger';
 import { env } from '../env';
 import { store } from '../assets';
@@ -150,6 +151,17 @@ export async function refreshAnnouncementStatus(announcementId: string): Promise
   if (n('QUEUED') === 0) status = n('FAILED') === 0 ? 'DONE' : n('SENT') === 0 ? 'FAILED' : 'PARTIAL';
   if (status !== 'SENDING' && ann.schedule?.cron && ann.schedule.active) status = status === 'DONE' ? 'SCHEDULED' : status;
   await prisma.announcement.update({ where: { id: announcementId }, data: { status } });
+  if (status === 'SENDING' || status === ann.status) return;
+  const link = `/tracking/${announcementId}`;
+  const total = n('SENT') + n('FAILED');
+  if (n('FAILED')) {
+    notify({
+      kind: 'delivery_failed', title: `ส่งประกาศ "${ann.title}" ล้มเหลว ${n('FAILED')} ห้อง`, body: `ส่งสำเร็จ ${n('SENT')}/${total} ห้อง · กดเพื่อดูสาเหตุ`,
+      link, emails: [ann.createdBy], roles: ['ADMIN'], dedupeKey: `ann-${announcementId}-${run}`,
+    });
+  } else if (ann.schedule) {
+    notify({ kind: 'schedule_sent', title: `ประกาศตั้งเวลา "${ann.title}" ส่งครบแล้ว`, body: `${total} ห้อง`, link, emails: [ann.createdBy], dedupeKey: `sched-${announcementId}-${run}` });
+  }
 }
 
 async function markFailed(deliveryId: string, announcementId: string, reason: string, attempts: number) {

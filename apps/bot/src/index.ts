@@ -11,10 +11,11 @@ import { startProfileWorker } from './workers/profile';
 import { startDispatchWorker } from './workers/dispatch';
 import { startDeliveryWorker } from './workers/delivery';
 import { startManageWorker } from './workers/manage';
+import { startNotifyWorker } from './workers/notify';
 
 async function main() {
   logger.info({ assetStore: store.kind }, 'asset storage');
-  const workers = [startControlWorker(), startProfileWorker(), startDispatchWorker(), startDeliveryWorker(), startManageWorker()];
+  const workers = [startControlWorker(), startProfileWorker(), startDispatchWorker(), startDeliveryWorker(), startManageWorker(), startNotifyWorker()];
   const ping = startPingLoop();
   const configSub = startConfigListener();
 

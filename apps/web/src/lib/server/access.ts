@@ -6,6 +6,7 @@ import { createToken, recentTokens } from './magic';
 import { hashPassword } from './password';
 import { allow } from './ratelimit';
 import { logger } from './logger';
+import { notify } from './queue';
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -21,6 +22,7 @@ export async function requestAccess(raw: unknown, ip: string): Promise<ActionRes
   const existing = await prisma.teamMember.findUnique({ where: { email } });
   if (!existing) {
     await prisma.teamMember.create({ data: { email, name, passwordHash: await hashPassword(password), requestNote: note ?? null, status: 'PENDING', role: 'EDITOR' } });
+    notify({ kind: 'join_request', title: `${email} ขอเข้าร่วมทีม`, body: note ? note.slice(0, 120) : 'กดเพื่ออนุมัติหรือปฏิเสธ', link: '/team', roles: ['OWNER'], dedupeKey: `join-${email}` });
   } else if (existing.status === 'PENDING') {
     await prisma.teamMember.update({ where: { id: existing.id }, data: { name, passwordHash: await hashPassword(password), requestNote: note ?? null } });
   }

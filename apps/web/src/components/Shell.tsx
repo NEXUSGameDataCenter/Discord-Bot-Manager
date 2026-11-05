@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { hasRole, type TeamRole } from '@nexus/shared';
 import { prefetch, useApi } from '@/lib/client';
 import { NavIcon } from './NavIcon';
+import { Bell } from './Bell';
 
 type Toast = { text: string; error?: boolean } | null;
 const ToastCtx = createContext<(text: string, error?: boolean) => void>(() => undefined);
@@ -69,13 +70,18 @@ export function Shell({ user, children }: { user: ShellUser; children: React.Rea
         </button>
         <img src="/logo.png" alt="" width={26} height={26} />
         <b>Nexus</b>
+        <span style={{ flex: 1 }} />
+        <Bell />
       </div>
       <div className="app">
         <aside className={`side ${open ? 'open' : ''}`}>
-          <Link href="/" className="sbrand" onClick={() => setOpen(false)}>
-            <img src="/logo.png" alt="Nexus" width={32} height={32} />
-            <span><b>Nexus</b><small>Bot control</small></span>
-          </Link>
+          <div className="sbrandrow">
+            <Link href="/" className="sbrand" onClick={() => setOpen(false)}>
+              <img src="/logo.png" alt="Nexus" width={32} height={32} />
+              <span><b>Nexus</b><small>Bot control</small></span>
+            </Link>
+            <span className="hide-mbar"><Bell /></span>
+          </div>
           {overview && (
             <div className={`botstate ${onlineCount ? '' : 'off'}`}><i />{bots.length ? `Bots ออนไลน์ ${onlineCount}/${bots.length}` : 'ยังไม่มี Bot'}</div>
           )}

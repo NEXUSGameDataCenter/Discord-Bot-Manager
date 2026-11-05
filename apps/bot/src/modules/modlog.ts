@@ -2,6 +2,7 @@ import { EmbedBuilder, type Guild, type User } from 'discord.js';
 import { prisma } from '@nexus/db';
 import { logger } from '../logger';
 import { getSettings } from './settings';
+import { notify } from '../queues';
 
 const COLORS: Record<string, number> = { BAN: 0xef4444, SOFTBAN: 0xf97316, KICK: 0xf59e0b, TIMEOUT: 0xeab308, WARN: 0xfacc15, HONEYPOT: 0xdc2626, UNBAN: 0x22c55e, UNTIMEOUT: 0x22c55e, PURGE: 0x64748b, LOCK: 0x64748b, UNLOCK: 0x64748b };
 
@@ -37,6 +38,11 @@ export async function recordCase(p: {
       if (i === 2) throw e;
     }
   }
+  notify({
+    kind: 'moderation', roles: ['ADMIN'], link: '/moderation',
+    title: p.action === 'HONEYPOT' ? `Honeypot จับ ${p.target?.tag ?? 'ผู้ใช้'} ใน ${p.guild.name}` : `Case #${caseNo} ${p.action} · ${p.target?.tag ?? ''} ใน ${p.guild.name}`,
+    body: [p.reason, `โดย ${p.moderator.tag}`].filter(Boolean).join(' · '),
+  });
   const chId = settings?.modLogChannelId;
   if (chId) {
     const ch = p.guild.channels.cache.get(chId);

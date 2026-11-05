@@ -15,6 +15,7 @@ const schema = z.object({
   /** Public base URL, used in invite links */
   AUTH_URL: z.string().url(),
   /** First owner. Can always get a recovery sign-in link written to the web log. */
+  VAPID_PUBLIC_KEY: z.string().optional(),
   OWNER_EMAIL: z.string().trim().toLowerCase().email().optional(),
 });
 

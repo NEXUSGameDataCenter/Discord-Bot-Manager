@@ -1,7 +1,7 @@
 import 'server-only';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
-import { QUEUES, MAX_DELIVERY_ATTEMPTS, type ControlJob, type DeliveryJob, type DispatchJob, type ManageJob, type ProfileJob } from '@nexus/shared';
+import { QUEUES, MAX_DELIVERY_ATTEMPTS, type ControlJob, type DeliveryJob, type DispatchJob, type ManageJob, type NotifyJob, type ProfileJob } from '@nexus/shared';
 import { serverEnv } from './env';
 
 const g = globalThis as unknown as { __nexusRedis?: Redis; __nexusQueues?: Map<string, Queue> };
@@ -28,6 +28,12 @@ export const queues = {
   dispatch: () => q<DispatchJob>(QUEUES.dispatch),
   delivery: () => q<DeliveryJob>(QUEUES.delivery),
   manage: () => q<ManageJob>(QUEUES.manage),
+  notify: () => q<NotifyJob>(QUEUES.notify),
 };
+
+/** Fire-and-forget notification (handled by the bot worker). */
+export function notify(job: NotifyJob): void {
+  queues.notify().add('notify', job, { removeOnComplete: 500, removeOnFail: 500, attempts: 2 }).catch(() => undefined);
+}
 
 export const scheduleJobId = (announcementId: string) => `sched-${announcementId}`;
