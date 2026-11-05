@@ -8,7 +8,7 @@ import { useApi, useEvents, fmtDate } from '@/lib/client';
 import type { AuditRow } from '@/lib/types';
 
 type Overview = {
-  bots: { id: string; username: string; status: string; pingMs: number | null; guilds: number }[];
+  bots: { id: string; username: string; avatarUrl: string | null; status: string; pingMs: number | null; guilds: number }[];
   guilds: number;
   sent30: number;
   failed7: number;
@@ -55,7 +55,7 @@ export default function OverviewPage() {
               {!data.bots.length && <p className="sub">ยังไม่มี Bot — <Link href="/bots">เพิ่ม Bot</Link></p>}
               {data.bots.map((b) => (
                 <div className="botrow" key={b.id}>
-                  <div className="boticon"><NavIcon name="bot" /></div>
+                  <div className="boticon" style={{ overflow: 'hidden', borderRadius: '50%' }}>{b.avatarUrl ? <img src={b.avatarUrl} alt="" /> : <NavIcon name="bot" />}</div>
                   <div className="grow"><strong>{b.username}</strong><small>{b.guilds} servers · {BOT_STATUS[b.status] ?? b.status}</small></div>
                   <span className="mono" style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12.5, color: 'var(--t2)' }}><Sig ms={b.status === 'ONLINE' ? b.pingMs : null} />{b.pingMs !== null && b.status === 'ONLINE' ? `${b.pingMs} ms` : '—'}</span>
                 </div>
