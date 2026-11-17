@@ -1,6 +1,10 @@
 'use client';
 import type { Embed } from '@nexus/shared';
 import { LIMITS } from '@nexus/shared';
+import { emojify } from 'node-emoji';
+
+/** Preview of what the bot sends: ':name:' shortcodes become emoji. */
+export const emo = (t: string) => t.split(/(<a?:\w+:\d+>)/).map((p, i) => (i % 2 ? p : emojify(p))).join('');
 
 export type Msg = { content: string; embeds: Embed[] };
 const SWATCH = [0x5fbf8f, 0x4c9be0, 0x9b6bd6, 0xe0567a, 0xe6c14a, 0xe08a3c, 0xd9534f, 0x95a5a6, 0x607d8b, 0xffffff];
@@ -82,7 +86,7 @@ export function MessageEditor({ value, onChange }: { value: Msg; onChange: (m: M
 /** Very small Discord markdown: **bold**, *italic*, # headings, role/channel mentions, line breaks. */
 export function Md({ text, roleName }: { text: string; roleName?: (id: string) => string | undefined }) {
   const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]!);
-  const html = text
+  const html = emo(text)
     .split('\n')
     .map((line) => {
       let l = esc(line);

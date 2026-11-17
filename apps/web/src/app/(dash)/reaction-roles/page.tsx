@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { RR_KINDS, RR_MODES, reactionRoleSchema, type ReactionRoleInput, type RrKind, type RrMode } from '@nexus/shared';
 import { PageHead, Loading, Empty, ErrorBox, useToast } from '@/components/Shell';
 import { GuildSelect, useGuildAssets, ChannelSelect, RoleMulti, type RoleRow } from '@/components/GuildSelect';
-import { MessageEditor, DiscordPreview, cleanEmbed } from '@/components/MessageEditor';
+import { MessageEditor, DiscordPreview, cleanEmbed, emo, Md } from '@/components/MessageEditor';
 import { api, useApi } from '@/lib/client';
 
 type Menu = ReactionRoleInput & { id: string; status: string; lastError: string | null; messageId: string | null };
@@ -13,10 +13,12 @@ type Style = Btn['style'];
 const STYLES: Record<Style, string> = { PRIMARY: 'Primary (น้ำเงิน)', SECONDARY: 'Secondary (เทา)', SUCCESS: 'Success (เขียว)', DANGER: 'Danger (แดง)' };
 const STATUS: Record<string, [string, string]> = { PUBLISHED: ['ok', 'โพสต์แล้ว'], DRAFT: ['info', 'กำลังโพสต์'], FAILED: ['bad', 'ล้มเหลว'] };
 
+const newBtn = (): Btn => ({ label: '', emoji: '', style: 'SECONDARY', roleIds: [], replyFiles: [], replyImageUrls: [] });
+
 const blank = (guildRefId: string): Draft => ({
   guildRefId, name: '', enabled: true, channelId: '', mode: 'NORMAL', messageSource: 'NEW',
   message: { content: '', embeds: [{ title: 'เลือก role ของคุณ', description: 'กดปุ่มด้านล่างเพื่อรับหรือถอด role', color: 0x4cc9e0, fields: [] }] },
-  kind: 'BUTTONS', reactions: [], rows: [[{ label: '', emoji: '', style: 'SECONDARY', roleIds: [] }]],
+  kind: 'BUTTONS', reactions: [], rows: [[newBtn()]],
   select: { placeholder: 'เลือก role', minValues: 0, maxValues: 1, options: [] }, allowedRoles: [], deniedRoles: [],
 });
 
@@ -27,7 +29,7 @@ function clean(d: Draft): Draft {
     ...d,
     existingMessageId: d.messageSource === 'EXISTING' ? t(d.existingMessageId) : undefined,
     message: { content: d.message.content, embeds: d.message.embeds.map(cleanEmbed) },
-    rows: d.rows.map((r) => r.map((b) => ({ ...b, label: b.label.trim(), emoji: t(b.emoji), reply: t(b.reply) }))),
+    rows: d.rows.map((r) => r.map((b) => ({ ...b, label: b.label.trim(), emoji: t(b.emoji), reply: t(b.reply), replyFiles: b.replyFiles ?? [], replyImageUrls: (b.replyImageUrls ?? []).map((u) => u.trim()).filter(Boolean) }))),
     select: { ...d.select, options: d.select.options.map((o) => ({ ...o, description: t(o.description), emoji: t(o.emoji) })) },
   };
 }
@@ -172,8 +174,8 @@ function Editor({ draft, setDraft, channels, roles, onSaved, onDelete }: {
           <div className="rrprev">
             <div className="sub" style={{ marginBottom: 8 }}>ตัวอย่างใน Discord</div>
             <DiscordPreview msg={d.messageSource === 'NEW' ? d.message : { content: '(ข้อความเดิม)', embeds: [] }} botName="Nexus Bot" roleName={roleName}>
-              {d.kind === 'REACTIONS' && <div className="dreacts">{d.reactions.map((r, i) => <span key={i} className="dreact">{r.emoji.startsWith('<') ? `:${r.emoji.split(':')[1]}:` : r.emoji || '?'} 1</span>)}</div>}
-              {d.kind === 'BUTTONS' && d.rows.map((row, i) => <div key={i} className="drow">{row.map((b, j) => <span key={j} className={`dbtn ${b.style.toLowerCase()}`}>{b.emoji && !b.emoji.startsWith('<') ? `${b.emoji} ` : ''}{b.label || (b.emoji ? '' : 'ปุ่ม')}</span>)}</div>)}
+              {d.kind === 'REACTIONS' && <div className="dreacts">{d.reactions.map((r, i) => <span key={i} className="dreact">{r.emoji.startsWith('<') ? `:${r.emoji.split(':')[1]}:` : emo(r.emoji) || '?'} 1</span>)}</div>}
+              {d.kind === 'BUTTONS' && d.rows.map((row, i) => <div key={i} className="drow">{row.map((b, j) => <span key={j} className={`dbtn ${b.style.toLowerCase()}`}>{b.emoji && !b.emoji.startsWith('<') ? `${emo(b.emoji)} ` : ''}{emo(b.label) || (b.emoji ? '' : 'ปุ่ม')}</span>)}</div>)}
               {d.kind === 'SELECT' && <div className="dselect">{d.select.placeholder || 'เลือก'}<span>⌄</span></div>}
             </DiscordPreview>
           </div>
@@ -207,9 +209,9 @@ function Editor({ draft, setDraft, channels, roles, onSaved, onDelete }: {
                     return (
                       <div className="rropt" key={c}>
                         <div className="rropthead" onClick={() => setOpen(open === key ? null : key)}>
-                          <span className={`dbtn ${b.style.toLowerCase()}`}>{b.emoji && !b.emoji.startsWith('<') ? `${b.emoji} ` : ''}{b.label || 'ปุ่ม'}</span>
+                          <span className={`dbtn ${b.style.toLowerCase()}`}>{b.emoji && !b.emoji.startsWith('<') ? `${emo(b.emoji)} ` : ''}{emo(b.label) || 'ปุ่ม'}</span>
                           <span className="sub" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {b.roleIds.length ? `ให้ role ${roleList(b.roleIds)}` : ''}{b.roleIds.length && b.reply ? ' + ' : ''}{b.reply ? 'ส่งข้อความเฉพาะผู้กด' : ''}{!b.roleIds.length && !b.reply ? 'ยังไม่ได้ตั้งค่า' : ''}
+                            {b.roleIds.length ? `ให้ role ${roleList(b.roleIds)}` : ''}{b.roleIds.length && b.reply ? ' + ' : ''}{b.reply || b.replyFiles?.length || b.replyImageUrls?.length ? 'ส่งข้อความเฉพาะผู้กด' : ''}{(b.replyFiles?.length ?? 0) + (b.replyImageUrls?.length ?? 0) ? ` + รูป ${(b.replyFiles?.length ?? 0) + (b.replyImageUrls?.length ?? 0)}` : ''}{!b.roleIds.length && !b.reply && !b.replyFiles?.length && !b.replyImageUrls?.length ? 'ยังไม่ได้ตั้งค่า' : ''}
                           </span>
                           {row.length < 5 && <button className="ghost small" title="ทำซ้ำ" onClick={(e) => { e.stopPropagation(); set({ rows: d.rows.map((x, i) => (i === r ? [...x.slice(0, c + 1), { ...b }, ...x.slice(c + 1)] : x)) }); }}>⧉</button>}
                           <button className="ghost small" title="ลบ" onClick={(e) => { e.stopPropagation(); set({ rows: d.rows.map((x, i) => (i === r ? x.filter((_, j) => j !== c) : x)).filter((x) => x.length) }); }}>×</button>
@@ -222,16 +224,16 @@ function Editor({ draft, setDraft, channels, roles, onSaved, onDelete }: {
                               <div className="field"><label>สี</label><select value={b.style} onChange={(e) => setBtn(r, c, { style: e.target.value as Style })}>{(Object.keys(STYLES) as Style[]).map((s) => <option key={s} value={s}>{STYLES[s]}</option>)}</select></div>
                             </div>
                             <div className="field"><label>Role ที่ได้รับเมื่อกด (เว้นว่างได้ ถ้าต้องการให้ปุ่มส่งข้อความอย่างเดียว)</label><RoleMulti roles={roles} onlyAssignable value={b.roleIds} onChange={(v) => setBtn(r, c, { roleIds: v })} /></div>
-                            <div className="field"><label>ข้อความตอบกลับเฉพาะผู้กด (ephemeral)</label><textarea rows={3} maxLength={2000} placeholder="เช่น โค้ดของคุณคือ WELCOME2026" value={b.reply ?? ''} onChange={(e) => setBtn(r, c, { reply: e.target.value })} /></div>
+                            <ReplyEditor b={b} set={(p) => setBtn(r, c, p)} />
                           </div>
                         )}
                       </div>
                     );
                   })}
-                  {row.length < 5 && <button className="secondary small" onClick={() => { set({ rows: d.rows.map((x, i) => (i === r ? [...x, { label: '', emoji: '', style: 'SECONDARY', roleIds: [] }] : x)) }); setOpen(`${r}:${row.length}`); }}>+ Add option</button>}
+                  {row.length < 5 && <button className="secondary small" onClick={() => { set({ rows: d.rows.map((x, i) => (i === r ? [...x, newBtn()] : x)) }); setOpen(`${r}:${row.length}`); }}>+ Add option</button>}
                 </div>
               ))}
-              {d.rows.length < 5 && <button className="secondary small" style={{ marginTop: 8 }} onClick={() => { set({ rows: [...d.rows, [{ label: '', emoji: '', style: 'SECONDARY', roleIds: [] }]] }); setOpen(`${d.rows.length}:0`); }}>+ Add row</button>}
+              {d.rows.length < 5 && <button className="secondary small" style={{ marginTop: 8 }} onClick={() => { set({ rows: [...d.rows, [newBtn()]] }); setOpen(`${d.rows.length}:0`); }}>+ Add row</button>}
             </>
           )}
 
@@ -271,5 +273,89 @@ function Editor({ draft, setDraft, channels, roles, onSaved, onDelete }: {
       </section>
       <ErrorBox error={undefined} />
     </>
+  );
+}
+
+type Asset = { id: string; fileName: string };
+
+/** Ephemeral reply: text with variables + images (upload, paste, drag & drop or https links). */
+function ReplyEditor({ b, set }: { b: Btn; set: (p: Partial<Btn>) => void }) {
+  const toast = useToast();
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const files = b.replyFiles ?? [];
+  const links = b.replyImageUrls ?? [];
+  const room = 10 - files.length - links.length;
+
+  async function upload(list: FileList | File[] | null) {
+    const picked = Array.from(list ?? []).filter((f) => f.type.startsWith('image/') || f.size);
+    if (!picked.length) return;
+    if (picked.length > room) return toast(`แนบได้อีก ${room} ไฟล์`, true);
+    setBusy(true);
+    const ids: string[] = [];
+    for (const [i, f] of picked.entries()) {
+      const fd = new FormData();
+      fd.append('kind', 'attachment');
+      fd.append('file', f.name && f.name !== 'image.png' ? f : new File([f], `pasted-${Date.now()}-${i + 1}.${(f.type.split('/')[1] ?? 'png').replace('jpeg', 'jpg')}`, { type: f.type }));
+      try {
+        const { asset } = await api<{ asset: Asset }>('/api/assets', { body: fd });
+        ids.push(asset.id);
+        setNames((n) => ({ ...n, [asset.id]: asset.fileName }));
+      } catch (e) {
+        toast((e as Error).message, true);
+      }
+    }
+    set({ replyFiles: [...files, ...ids] });
+    setBusy(false);
+  }
+
+  return (
+    <div
+      onPaste={(e) => { if (e.clipboardData.files.length) { e.preventDefault(); void upload(e.clipboardData.files); } }}
+      onDragOver={(e) => e.dataTransfer.types.includes('Files') && e.preventDefault()}
+      onDrop={(e) => { if (e.dataTransfer.files.length) { e.preventDefault(); void upload(e.dataTransfer.files); } }}
+    >
+      <div className="field">
+        <label>ข้อความตอบกลับเฉพาะผู้กด (ephemeral)</label>
+        <textarea rows={4} maxLength={2000} placeholder="เช่น ### ขอบคุณที่เข้าร่วม {user} 🎟️ โค้ด: WELCOME2026" value={b.reply ?? ''} onChange={(e) => set({ reply: e.target.value })} />
+        <small className="sub">ตัวแปร: {'{user}'} แท็กคนกด · {'{user.name}'} ชื่อในเซิร์ฟเวอร์ · {'{username}'} · {'{server}'} · {'{server.memberCount}'} · {'{channel}'} · พิมพ์ :ชื่อ: ได้ เช่น :tickets: → 🎟️ · วางรูปด้วย Ctrl+V หรือลากไฟล์มาวางได้</small>
+      </div>
+      <div className="field">
+        <label>รูปที่แนบไปกับข้อความ ({files.length + links.length}/10)</label>
+        <div className="rrthumbs">
+          {files.map((id) => (
+            <div className="rrthumb" key={id}>
+              <img src={`/api/assets/${id}`} alt={names[id] ?? ''} />
+              <button type="button" className="ghost small" aria-label="นำออก" onClick={() => set({ replyFiles: files.filter((x) => x !== id) })}>×</button>
+            </div>
+          ))}
+          {links.filter((u) => /^https:\/\//.test(u)).map((u, i) => (
+            <div className="rrthumb" key={`u${i}`}><img src={u} alt="" /></div>
+          ))}
+        </div>
+        {links.map((u, i) => (
+          <div className="rrline" key={i}>
+            <input className="input" placeholder="https://.../image.png" value={u} onChange={(e) => set({ replyImageUrls: links.map((x, j) => (j === i ? e.target.value : x)) })} />
+            <button className="ghost small" aria-label="ลบลิงก์" onClick={() => set({ replyImageUrls: links.filter((_, j) => j !== i) })}>×</button>
+          </div>
+        ))}
+        <div className="toolbar" style={{ margin: 0 }}>
+          <label className={`secondary small btnlike ${room <= 0 || busy ? 'disabled' : ''}`}>
+            {busy ? 'กำลังอัปโหลด…' : 'แนบไฟล์รูป'}
+            <input type="file" accept="image/*" multiple hidden disabled={room <= 0 || busy} onChange={(e) => { void upload(e.target.files); e.target.value = ''; }} />
+          </label>
+          <button type="button" className="secondary small" disabled={room <= 0} onClick={() => set({ replyImageUrls: [...links, ''] })}>+ รูปจากลิงก์</button>
+        </div>
+      </div>
+      {(b.reply || files.length || links.length) ? (
+        <div className="field">
+          <label>ตัวอย่างข้อความที่ผู้กดจะเห็น</label>
+          <div className="dprev"><div className="dcontent"><Md text={(b.reply ?? '').replace(/\{user\}|\{user\.mention\}/g, '@ผู้กด').replace(/\{user\.name\}|\{username\}/g, 'ผู้กด').replace(/\{server(\.name)?\}/g, 'ชื่อเซิร์ฟเวอร์')} /></div>
+            <div className="rrthumbs" style={{ marginTop: 8 }}>{files.map((id) => <img key={id} src={`/api/assets/${id}`} alt="" className="rrprevimg" />)}{links.filter((u) => /^https:\/\//.test(u)).map((u, i) => <img key={i} src={u} alt="" className="rrprevimg" />)}</div>
+            <small style={{ color: '#949ba4', fontSize: 12 }}>เฉพาะคุณที่มองเห็นข้อความนี้</small>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

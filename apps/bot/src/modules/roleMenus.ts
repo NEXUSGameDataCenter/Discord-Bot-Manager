@@ -15,7 +15,11 @@ import {
 import { prisma, type RoleMenu } from '@nexus/db';
 import { gateReason, legacyRoleMenu, menuRoleIds, reactionRoleSchema, resolveOption, resolveSelect, type ReactionRoleConfig, type RoleChange } from '@nexus/shared';
 import { logger } from '../logger';
-import { toApiEmbed } from '../workers/delivery';
+import { fetchImage, toApiEmbed } from '../workers/delivery';
+import { emojiField, fillMemberVars, shortcodes } from '../emoji';
+import { store } from '../assets';
+import type { Embed } from '@nexus/shared';
+import type { Guild } from 'discord.js';
 
 const STYLE = { PRIMARY: ButtonStyle.Primary, SECONDARY: ButtonStyle.Secondary, SUCCESS: ButtonStyle.Success, DANGER: ButtonStyle.Danger } as const;
 
@@ -36,11 +40,31 @@ function parseEmoji(e?: string) {
 }
 const emojiKey = (e: string) => e.match(/^<a?:\w+:(\d+)>$/)?.[1] ?? e;
 
-function components(menuId: string, c: ReactionRoleConfig): APIActionRowComponent<APIMessageActionRowComponent>[] {
+function emojifyEmbed(e: Embed, g: Guild): Embed {
+  const s = (t?: string) => (t ? shortcodes(t, g) : t);
+  return { ...e, title: s(e.title), description: s(e.description), fields: e.fields?.map((f) => ({ ...f, name: s(f.name)!, value: s(f.value)! })), footer: e.footer && { ...e.footer, text: s(e.footer.text)! }, author: e.author && { ...e.author, name: s(e.author.name)! } };
+}
+
+/** Files for a button's ephemeral reply: uploaded assets + downloaded image links. */
+async function replyFiles(b: { replyFiles: string[]; replyImageUrls: string[] }) {
+  const assets = b.replyFiles.length ? await prisma.asset.findMany({ where: { id: { in: b.replyFiles } } }) : [];
+  const files = await Promise.all(assets.map(async (a) => ({ attachment: await store.get(a.storedAs), name: a.fileName })));
+  for (const [i, u] of b.replyImageUrls.entries()) {
+    try {
+      files.push(await fetchImage(u, i));
+    } catch (err) {
+      logger.warn({ err: (err as Error).message, url: u }, 'reply image failed');
+    }
+  }
+  return files;
+}
+
+function components(menuId: string, c: ReactionRoleConfig, g: Guild): APIActionRowComponent<APIMessageActionRowComponent>[] {
+  const em = (e?: string) => parseEmoji(emojiField(e, g));
   if (c.kind === 'BUTTONS')
     return c.rows.map((row, r) => ({
       type: ComponentType.ActionRow,
-      components: row.map((b, i) => ({ type: ComponentType.Button, style: STYLE[b.style], label: b.label || undefined, emoji: parseEmoji(b.emoji), custom_id: `rr:${menuId}:b:${r}:${i}` })),
+      components: row.map((b, i) => ({ type: ComponentType.Button, style: STYLE[b.style], label: b.label ? shortcodes(b.label, g) : undefined, emoji: em(b.emoji), custom_id: `rr:${menuId}:b:${r}:${i}` })),
     }));
   if (c.kind === 'SELECT')
     return [
@@ -53,7 +77,7 @@ function components(menuId: string, c: ReactionRoleConfig): APIActionRowComponen
             placeholder: c.select.placeholder,
             min_values: Math.min(c.select.minValues, c.select.options.length),
             max_values: Math.min(c.mode === 'UNIQUE' ? 1 : c.select.maxValues, c.select.options.length),
-            options: c.select.options.map((o, i) => ({ label: o.label, description: o.description || undefined, emoji: parseEmoji(o.emoji), value: String(i) })),
+            options: c.select.options.map((o, i) => ({ label: shortcodes(o.label, g), description: o.description ? shortcodes(o.description, g) : undefined, emoji: em(o.emoji), value: String(i) })),
           },
         ],
       },
@@ -69,7 +93,7 @@ export async function publishRoleMenu(client: Client<true>, menuId: string): Pro
     const g = client.guilds.cache.get(menu.guild.guildId);
     const ch = g?.channels.cache.get(menu.channelId);
     if (!g || !ch?.isTextBased() || !('send' in ch)) throw new Error('ไม่พบห้องปลายทาง');
-    const comps = components(menu.id, c);
+    const comps = components(menu.id, c, g);
     let msg;
     if (c.messageSource === 'EXISTING') {
       msg = await ch.messages.fetch(c.existingMessageId!).catch(() => null);
@@ -80,8 +104,8 @@ export async function publishRoleMenu(client: Client<true>, menuId: string): Pro
       }
     } else {
       const payload = {
-        content: c.message.content || undefined,
-        embeds: c.message.embeds.map((e) => toApiEmbed(e, new Date())),
+        content: c.message.content ? shortcodes(c.message.content, g) : undefined,
+        embeds: c.message.embeds.map((e) => toApiEmbed(emojifyEmbed(e, g), new Date())),
         components: comps,
         allowedMentions: { parse: [] as never[] },
       };
@@ -90,9 +114,10 @@ export async function publishRoleMenu(client: Client<true>, menuId: string): Pro
       else msg = await ch.send(payload);
     }
     if (c.kind === 'REACTIONS') {
-      const keep = new Set(c.reactions.map((r) => emojiKey(r.emoji)));
+      const reacts = c.reactions.map((r) => emojiField(r.emoji, g)!);
+      const keep = new Set(reacts.map(emojiKey));
       for (const r of msg.reactions.cache.values()) if (!keep.has(r.emoji.id ?? r.emoji.name ?? '')) await r.users.remove(client.user.id).catch(() => undefined);
-      for (const r of c.reactions) await msg.react(r.emoji).catch((err) => logger.warn({ err: err.message, emoji: r.emoji }, 'react failed'));
+      for (const r of reacts) await msg.react(r).catch((err) => logger.warn({ err: err.message, emoji: r }, 'react failed'));
     }
     await prisma.roleMenu.update({ where: { id: menu.id }, data: { messageId: msg.id, status: 'PUBLISHED', lastError: null } });
   } catch (err) {
@@ -132,8 +157,10 @@ export async function onRoleButton(i: ButtonInteraction): Promise<void> {
     const gate = gateReason(c.allowedRoles, c.deniedRoles, has);
     if (gate) return void i.editReply(gate);
     const changed = btn.roleIds.length ? await apply(i.member, resolveOption(c.mode, menuRoleIds(c), btn.roleIds, has)) : '';
-    const text = [btn.reply, changed].filter(Boolean).join('\n\n') || 'ไม่มีการเปลี่ยนแปลง';
-    await i.editReply({ content: text.slice(0, 2000), allowedMentions: { parse: [] } });
+    const reply = btn.reply ? shortcodes(fillMemberVars(btn.reply, i.member, i.channel && 'name' in i.channel ? (i.channel.name ?? undefined) : undefined), i.guild) : '';
+    const files = await replyFiles(btn);
+    const text = [reply, changed].filter(Boolean).join('\n\n') || (files.length ? '' : 'ไม่มีการเปลี่ยนแปลง');
+    await i.editReply({ content: text.slice(0, 2000) || undefined, files, allowedMentions: { parse: [] } });
   } catch (err) {
     logger.warn({ err: (err as Error).message }, 'role button failed');
     await i.editReply('เปลี่ยน role ไม่สำเร็จ — แจ้งแอดมินตรวจสิทธิ์ Manage Roles ของ Bot');
@@ -166,7 +193,8 @@ export async function onReaction(r: MessageReaction | PartialMessageReaction, u:
   const c = configOf(menu);
   if (c.kind !== 'REACTIONS') return;
   const key = r.emoji.id ?? r.emoji.name ?? '';
-  const opt = c.reactions.find((o) => emojiKey(o.emoji) === key);
+  const g0 = r.client.guilds.cache.get(r.message.guildId);
+  const opt = c.reactions.find((o) => emojiKey(emojiField(o.emoji, g0)!) === key);
   if (!opt) return;
   try {
     const g = r.client.guilds.cache.get(r.message.guildId);

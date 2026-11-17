@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { validateMessage, LIMITS } from './limits';
 
 export const snowflake = z.string().regex(/^\d{17,20}$/, 'Invalid Discord ID');
-const httpUrl = z
+export const httpUrl = z
   .string()
   .url()
   .refine((u) => /^https?:\/\//i.test(u), 'URL must start with http:// or https://');

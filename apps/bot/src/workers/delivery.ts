@@ -213,7 +213,7 @@ const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 const PRIVATE_HOST = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|\[?::1\]?$|\[?f[cd]|.*\.internal$|.*\.railway\.internal$)/i;
 
 /** Downloads an image link so it is posted as a real attachment (outside any embed). */
-async function fetchImage(url: string, i: number): Promise<{ attachment: Buffer; name: string }> {
+export async function fetchImage(url: string, i: number): Promise<{ attachment: Buffer; name: string }> {
   const u = new URL(url);
   if (u.protocol !== 'https:' || PRIVATE_HOST.test(u.hostname)) throw new FatalError(`ลิงก์รูปไม่อนุญาต: ${u.hostname}`);
   let res: Response;

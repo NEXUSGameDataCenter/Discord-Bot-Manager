@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { embedSchema, snowflake } from './schemas';
+import { embedSchema, httpUrl, snowflake } from './schemas';
 import { LIMITS } from './limits';
 
 /* Reaction roles v2 (modelled on Koya.gg): a full message + reactions, button rows or a select menu. */
@@ -28,6 +28,9 @@ export const rrButtonSchema = z.object({
   roleIds,
   /** Ephemeral text shown to the clicker; with no roles the button only sends this. */
   reply,
+  /** Uploaded files (asset ids) and image links sent with the ephemeral reply. */
+  replyFiles: z.array(z.string().min(1)).max(10).default([]),
+  replyImageUrls: z.array(httpUrl.refine((u) => /^https:\/\//i.test(u), 'ลิงก์รูปต้องเป็น https://')).max(10).default([]),
 });
 export const rrSelectOptionSchema = z.object({
   label: z.string().trim().min(1, 'ต้องใส่ชื่อตัวเลือก').max(100),
@@ -70,7 +73,8 @@ export const reactionRoleSchema = z
       m.rows.forEach((row, r) =>
         row.forEach((b, c) => {
           if (!b.label && !b.emoji) issue(`ปุ่ม แถว ${r + 1} #${c + 1} ต้องมีชื่อหรือ emoji`, ['rows', r, c]);
-          if (!b.roleIds.length && !b.reply) issue(`ปุ่ม แถว ${r + 1} #${c + 1} ต้องเลือก role หรือใส่ข้อความตอบกลับ`, ['rows', r, c]);
+          if (b.replyFiles.length + b.replyImageUrls.length > 10) issue(`ปุ่ม แถว ${r + 1} #${c + 1} แนบรูปได้สูงสุด 10`, ['rows', r, c]);
+          if (!b.roleIds.length && !b.reply && !b.replyFiles.length && !b.replyImageUrls.length) issue(`ปุ่ม แถว ${r + 1} #${c + 1} ต้องเลือก role หรือใส่ข้อความตอบกลับ`, ['rows', r, c]);
         }),
       );
     }
@@ -104,7 +108,7 @@ export function legacyRoleMenu(m: { title: string; description: string; color: n
     kind: m.type === 'REACTION' ? 'REACTIONS' : 'BUTTONS', reactions: [], rows: [], select: { placeholder: 'เลือก role', minValues: 0, maxValues: 1, options: [] }, allowedRoles: [], deniedRoles: [],
   };
   if (base.kind === 'REACTIONS') base.reactions = opts.map((o) => ({ emoji: o.emoji ?? '', roleIds: [o.roleId] }));
-  else for (let i = 0; i < opts.length; i += 5) base.rows.push(opts.slice(i, i + 5).map((o) => ({ label: o.label, emoji: o.emoji, style: o.style ?? 'SECONDARY', roleIds: [o.roleId] })));
+  else for (let i = 0; i < opts.length; i += 5) base.rows.push(opts.slice(i, i + 5).map((o) => ({ label: o.label, emoji: o.emoji, style: o.style ?? 'SECONDARY', roleIds: [o.roleId], replyFiles: [], replyImageUrls: [] })));
   return base;
 }
 
