@@ -15,6 +15,7 @@ import { BotPicker } from '@/components/BotPicker';
 import { api, useApi } from '@/lib/client';
 import type { ChannelRow, GuildRow } from '@/lib/types';
 import { NavIcon } from '@/components/NavIcon';
+import { Combo } from '@/components/Combo';
 
 /* ---------- draft types (form state, converted to the zod payload on submit) ---------- */
 type FieldDraft = { name: string; value: string; inline: boolean };
@@ -510,20 +511,14 @@ function TargetPicker({ botId, setBotId, targets, setTargets, hasFiles }: {
         </div>
         <div className="field">
           <label>Channel Selection</label>
-          <select value={channelId} onChange={(e) => setChannelId(e.target.value)} disabled={!guildRefId || !channels}>
-            {!guildRefId && <option value="">— เลือก Server ก่อน —</option>}
-            {guildRefId && !channels && <option value="">Loading channels…</option>}
-            {channels && !channels.length && <option value="">ไม่มีห้องที่ Bot ส่งได้</option>}
-            {grouped.map(([cat, list]) => (
-              <optgroup key={cat} label={cat}>
-                {list.map((c) => (
-                  <option key={c.channelId} value={c.channelId} disabled={exists(guildRefId, c.channelId)}>
-                    #{c.name}{c.channelId === guild?.defaultChannelId ? ' (default)' : ''}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          <Combo
+            items={grouped.flatMap(([cat, list]) => list.map((c) => ({ value: c.channelId, label: c.name, group: cat, disabled: exists(guildRefId, c.channelId), hint: exists(guildRefId, c.channelId) ? 'เพิ่มแล้ว' : c.channelId === guild?.defaultChannelId ? 'default' : undefined })))}
+            value={channelId || null}
+            onChange={(v) => setChannelId((v as string | null) ?? '')}
+            prefix="#"
+            placeholder={!guildRefId ? '— เลือก Server ก่อน —' : !channels ? 'Loading channels…' : channels.length ? 'พิมพ์ค้นหาห้อง' : 'ไม่มีห้องที่ Bot ส่งได้'}
+            empty="ไม่พบห้อง"
+          />
         </div>
         <div className="field">
           <label>Delivery Mode</label>

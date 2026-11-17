@@ -7,7 +7,7 @@ import { publish } from './redis';
 import { refreshChannels, syncAllGuilds, upsertGuild } from './guilds';
 import { notify, profileQueue, RETRY_OPTS } from './queues';
 import { onMemberAdd, onMemberRemove } from './modules/welcome';
-import { onReaction, onRoleButton } from './modules/roleMenus';
+import { onReaction, onRoleButton, onRoleSelect } from './modules/roleMenus';
 import { onMessage } from './modules/honeypot';
 import { onCommand, onReasonAutocomplete, registerCommands } from './modules/moderation';
 
@@ -114,6 +114,7 @@ export async function startBot(botId: string): Promise<void> {
   client.on(Events.InteractionCreate, (i) =>
     safe('interaction', async () => {
       if (i.isButton() && i.customId.startsWith('rr:')) return onRoleButton(i);
+      if (i.isStringSelectMenu() && i.customId.startsWith('rr:')) return onRoleSelect(i);
       if (i.isAutocomplete()) return onReasonAutocomplete(botId, i);
       if (i.isChatInputCommand()) return onCommand(botId, i);
     }),

@@ -5,6 +5,7 @@ import { BotPicker } from '@/components/BotPicker';
 import { api, useApi, useEvents, fmtDate, statusClass } from '@/lib/client';
 import type { GuildRow } from '@/lib/types';
 import { NavIcon } from '@/components/NavIcon';
+import { Combo } from '@/components/Combo';
 
 export default function ServersPage() {
   const toast = useToast();
@@ -102,12 +103,7 @@ export default function ServersPage() {
             <summary>ตั้งค่าเซิร์ฟเวอร์</summary>
             <div className="field">
               <label>Default announcement channel</label>
-              <select value={g.defaultChannelId ?? ''} onChange={(e) => setDefault(g, e.target.value)}>
-                <option value="">— none —</option>
-                {g.sendableChannels.map((c) => (
-                  <option key={c.channelId} value={c.channelId}>#{c.name}</option>
-                ))}
-              </select>
+              <Combo items={g.sendableChannels.map((c) => ({ value: c.channelId, label: c.name }))} value={g.defaultChannelId} onChange={(v) => setDefault(g, (v as string | null) ?? '')} prefix="#" placeholder="— none —" empty="ไม่พบห้อง" />
             </div>
             <details>
               <summary>Custom template variables ({Object.keys(g.customVars ?? {}).length})</summary>

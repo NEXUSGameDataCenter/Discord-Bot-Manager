@@ -1,60 +1,98 @@
 import {
   ButtonStyle,
   ComponentType,
-  EmbedBuilder,
+  type APIActionRowComponent,
+  type APIMessageActionRowComponent,
   type ButtonInteraction,
   type Client,
+  type GuildMember,
   type MessageReaction,
   type PartialMessageReaction,
   type PartialUser,
+  type StringSelectMenuInteraction,
   type User,
-  type APIActionRowComponent,
-  type APIButtonComponent,
 } from 'discord.js';
-import { prisma } from '@nexus/db';
-import { resolveRoleMenu, roleMenuOptionSchema, type RoleMenuMode, type RoleMenuOption } from '@nexus/shared';
-import { z } from 'zod';
+import { prisma, type RoleMenu } from '@nexus/db';
+import { gateReason, legacyRoleMenu, menuRoleIds, reactionRoleSchema, resolveOption, resolveSelect, type ReactionRoleConfig, type RoleChange } from '@nexus/shared';
 import { logger } from '../logger';
+import { toApiEmbed } from '../workers/delivery';
 
-const STYLE: Record<RoleMenuOption['style'], ButtonStyle> = { PRIMARY: ButtonStyle.Primary, SECONDARY: ButtonStyle.Secondary, SUCCESS: ButtonStyle.Success, DANGER: ButtonStyle.Danger };
-const opts = (j: unknown) => z.array(roleMenuOptionSchema).parse(j);
+const STYLE = { PRIMARY: ButtonStyle.Primary, SECONDARY: ButtonStyle.Secondary, SUCCESS: ButtonStyle.Success, DANGER: ButtonStyle.Danger } as const;
 
-/** Matches "<:name:id>" / "<a:name:id>" custom emoji; otherwise unicode. */
-function emojiKey(e: string): string {
-  return e.match(/^<a?:\w+:(\d+)>$/)?.[1] ?? e;
+/** The menu's v2 config, converting menus saved before v2. */
+export function configOf(m: RoleMenu): ReactionRoleConfig {
+  if (m.config) {
+    const parsed = reactionRoleSchema.safeParse({ ...(m.config as object), guildRefId: m.guildRefId, name: m.title, enabled: m.enabled, channelId: m.channelId });
+    if (parsed.success) return parsed.data;
+  }
+  return legacyRoleMenu(m);
 }
+
+/** "<:name:id>" / "<a:name:id>" → custom emoji; anything else is unicode. */
 function parseEmoji(e?: string) {
   if (!e) return undefined;
   const m = e.match(/^<(a)?:(\w+):(\d+)>$/);
   return m ? { id: m[3]!, name: m[2]!, animated: !!m[1] } : { name: e };
 }
+const emojiKey = (e: string) => e.match(/^<a?:\w+:(\d+)>$/)?.[1] ?? e;
 
-/** Post or update the menu message. Reaction menus get their emojis added. */
+function components(menuId: string, c: ReactionRoleConfig): APIActionRowComponent<APIMessageActionRowComponent>[] {
+  if (c.kind === 'BUTTONS')
+    return c.rows.map((row, r) => ({
+      type: ComponentType.ActionRow,
+      components: row.map((b, i) => ({ type: ComponentType.Button, style: STYLE[b.style], label: b.label || undefined, emoji: parseEmoji(b.emoji), custom_id: `rr:${menuId}:b:${r}:${i}` })),
+    }));
+  if (c.kind === 'SELECT')
+    return [
+      {
+        type: ComponentType.ActionRow,
+        components: [
+          {
+            type: ComponentType.StringSelect,
+            custom_id: `rr:${menuId}:s`,
+            placeholder: c.select.placeholder,
+            min_values: Math.min(c.select.minValues, c.select.options.length),
+            max_values: Math.min(c.mode === 'UNIQUE' ? 1 : c.select.maxValues, c.select.options.length),
+            options: c.select.options.map((o, i) => ({ label: o.label, description: o.description || undefined, emoji: parseEmoji(o.emoji), value: String(i) })),
+          },
+        ],
+      },
+    ];
+  return [];
+}
+
+/** Post or update the menu message (or attach to an existing one), then add reactions. */
 export async function publishRoleMenu(client: Client<true>, menuId: string): Promise<void> {
   const menu = await prisma.roleMenu.findUniqueOrThrow({ where: { id: menuId }, include: { guild: true } });
   try {
+    const c = configOf(menu);
     const g = client.guilds.cache.get(menu.guild.guildId);
     const ch = g?.channels.cache.get(menu.channelId);
     if (!g || !ch?.isTextBased() || !('send' in ch)) throw new Error('ไม่พบห้องปลายทาง');
-    const options = opts(menu.options);
-    const embed = new EmbedBuilder().setTitle(menu.title).setColor(menu.color);
-    const lines = options.map((o) => `${o.emoji ?? '•'} <@&${o.roleId}> — ${o.label}`).join('\n');
-    embed.setDescription([menu.description, lines].filter(Boolean).join('\n\n').slice(0, 4096));
-    const components: APIActionRowComponent<APIButtonComponent>[] = [];
-    if (menu.type === 'BUTTON') {
-      for (let i = 0; i < options.length; i += 5)
-        components.push({
-          type: ComponentType.ActionRow,
-          components: options.slice(i, i + 5).map((o) => ({ type: ComponentType.Button, style: STYLE[o.style], label: o.label, emoji: parseEmoji(o.emoji), custom_id: `rr:${menu.id}:${o.roleId}` })),
-        });
+    const comps = components(menu.id, c);
+    let msg;
+    if (c.messageSource === 'EXISTING') {
+      msg = await ch.messages.fetch(c.existingMessageId!).catch(() => null);
+      if (!msg) throw new Error('ไม่พบข้อความตาม Message ID ในห้องนี้');
+      if (c.kind !== 'REACTIONS') {
+        if (msg.author.id !== client.user.id) throw new Error('ปุ่มและ select menu ใส่ได้เฉพาะข้อความที่ Bot ส่งเอง — ใช้ Reactions หรือโพสต์ข้อความใหม่');
+        await msg.edit({ components: comps });
+      }
+    } else {
+      const payload = {
+        content: c.message.content || undefined,
+        embeds: c.message.embeds.map((e) => toApiEmbed(e, new Date())),
+        components: comps,
+        allowedMentions: { parse: [] as never[] },
+      };
+      msg = menu.messageId ? await ch.messages.fetch(menu.messageId).catch(() => null) : null;
+      if (msg) await msg.edit({ ...payload, content: payload.content ?? '' });
+      else msg = await ch.send(payload);
     }
-    const payload = { embeds: [embed], components, allowedMentions: { parse: [] as never[] } };
-    let msg = menu.messageId ? await ch.messages.fetch(menu.messageId).catch(() => null) : null;
-    if (msg) await msg.edit(payload);
-    else msg = await ch.send(payload);
-    if (menu.type === 'REACTION') {
-      await msg.reactions.removeAll().catch(() => undefined);
-      for (const o of options) await msg.react(o.emoji!).catch((err) => logger.warn({ err: err.message, emoji: o.emoji }, 'react failed'));
+    if (c.kind === 'REACTIONS') {
+      const keep = new Set(c.reactions.map((r) => emojiKey(r.emoji)));
+      for (const r of msg.reactions.cache.values()) if (!keep.has(r.emoji.id ?? r.emoji.name ?? '')) await r.users.remove(client.user.id).catch(() => undefined);
+      for (const r of c.reactions) await msg.react(r.emoji).catch((err) => logger.warn({ err: err.message, emoji: r.emoji }, 'react failed'));
     }
     await prisma.roleMenu.update({ where: { id: menu.id }, data: { messageId: msg.id, status: 'PUBLISHED', lastError: null } });
   } catch (err) {
@@ -63,46 +101,90 @@ export async function publishRoleMenu(client: Client<true>, menuId: string): Pro
   }
 }
 
-async function apply(guildId: string, client: Client<true>, userId: string, menuMode: string, menuRoles: string[], pressed: string, added?: boolean) {
-  const g = client.guilds.cache.get(guildId);
-  if (!g) return { text: 'ไม่พบเซิร์ฟเวอร์' };
-  const m = await g.members.fetch(userId);
-  const botTop = g.members.me?.roles.highest.position ?? 0;
-  const role = g.roles.cache.get(pressed);
-  if (!role || role.managed || role.position >= botTop) return { text: 'Bot ไม่สามารถจัดการ role นี้ได้ (ตรวจลำดับ role ของ Bot)' };
-  const { add, remove } = resolveRoleMenu(menuMode as RoleMenuMode, menuRoles, [...m.roles.cache.keys()], pressed, added);
-  if (remove.length) await m.roles.remove(remove, 'Nexus role menu');
-  if (add.length) await m.roles.add(add, 'Nexus role menu');
-  const t = [...add.map((r) => `✅ ได้รับ <@&${r}>`), ...remove.map((r) => `➖ นำออก <@&${r}>`)].join('\n');
-  return { text: t || 'ไม่มีการเปลี่ยนแปลง' };
+/** Applies a change; refuses roles the bot cannot manage. */
+async function apply(member: GuildMember, change: RoleChange): Promise<string> {
+  if (change.blocked) return change.blocked;
+  const botTop = member.guild.members.me?.roles.highest.position ?? 0;
+  const bad = [...change.add, ...change.remove].map((id) => member.guild.roles.cache.get(id)).filter((r) => !r || r.managed || r.position >= botTop);
+  if (bad.length) return 'Bot จัดการ role นี้ไม่ได้ — ลาก role ของ Bot ให้อยู่สูงกว่า role ที่แจก';
+  if (change.remove.length) await member.roles.remove(change.remove, 'Nexus reaction role');
+  if (change.add.length) await member.roles.add(change.add, 'Nexus reaction role');
+  return [...change.add.map((r) => `ได้รับ <@&${r}>`), ...change.remove.map((r) => `นำออก <@&${r}>`)].join('\n');
+}
+
+async function loadMenu(menuId: string) {
+  const menu = await prisma.roleMenu.findUnique({ where: { id: menuId } });
+  return menu ? { menu, c: configOf(menu) } : null;
 }
 
 export async function onRoleButton(i: ButtonInteraction): Promise<void> {
-  const [, menuId, roleId] = i.customId.split(':');
-  const menu = await prisma.roleMenu.findUnique({ where: { id: menuId! } });
-  if (!menu || !i.guildId) return void i.reply({ content: 'เมนูนี้ถูกลบแล้ว', ephemeral: true });
+  const [, menuId, kind, r, b] = i.customId.split(':');
+  const found = await loadMenu(menuId!);
+  if (!found || !i.inCachedGuild()) return void i.reply({ content: 'เมนูนี้ถูกลบแล้ว', ephemeral: true });
+  const { menu, c } = found;
+  if (!menu.enabled) return void i.reply({ content: 'เมนูนี้ปิดใช้งานอยู่', ephemeral: true });
+  // Menus from before v2 used "rr:<menu>:<roleId>".
+  const btn = kind === 'b' ? c.rows[Number(r)]?.[Number(b)] : c.rows.flat().find((x) => x.roleIds.includes(kind!));
+  if (!btn) return void i.reply({ content: 'ปุ่มนี้ไม่มีแล้ว', ephemeral: true });
   await i.deferReply({ ephemeral: true });
   try {
-    const res = await apply(i.guildId, i.client, i.user.id, menu.mode, opts(menu.options).map((o) => o.roleId), roleId!);
-    await i.editReply({ content: res.text, allowedMentions: { parse: [] } });
+    const has = [...i.member.roles.cache.keys()];
+    const gate = gateReason(c.allowedRoles, c.deniedRoles, has);
+    if (gate) return void i.editReply(gate);
+    const changed = btn.roleIds.length ? await apply(i.member, resolveOption(c.mode, menuRoleIds(c), btn.roleIds, has)) : '';
+    const text = [btn.reply, changed].filter(Boolean).join('\n\n') || 'ไม่มีการเปลี่ยนแปลง';
+    await i.editReply({ content: text.slice(0, 2000), allowedMentions: { parse: [] } });
   } catch (err) {
     logger.warn({ err: (err as Error).message }, 'role button failed');
     await i.editReply('เปลี่ยน role ไม่สำเร็จ — แจ้งแอดมินตรวจสิทธิ์ Manage Roles ของ Bot');
   }
 }
 
+export async function onRoleSelect(i: StringSelectMenuInteraction): Promise<void> {
+  const [, menuId] = i.customId.split(':');
+  const found = await loadMenu(menuId!);
+  if (!found || !i.inCachedGuild()) return void i.reply({ content: 'เมนูนี้ถูกลบแล้ว', ephemeral: true });
+  const { menu, c } = found;
+  if (!menu.enabled) return void i.reply({ content: 'เมนูนี้ปิดใช้งานอยู่', ephemeral: true });
+  await i.deferReply({ ephemeral: true });
+  try {
+    const has = [...i.member.roles.cache.keys()];
+    const gate = gateReason(c.allowedRoles, c.deniedRoles, has);
+    if (gate) return void i.editReply(gate);
+    const text = await apply(i.member, resolveSelect(c.mode, c.select.options.map((o) => o.roleIds), i.values.map(Number), has));
+    await i.editReply({ content: text || 'ไม่มีการเปลี่ยนแปลง', allowedMentions: { parse: [] } });
+  } catch (err) {
+    logger.warn({ err: (err as Error).message }, 'role select failed');
+    await i.editReply('เปลี่ยน role ไม่สำเร็จ — แจ้งแอดมินตรวจสิทธิ์ Manage Roles ของ Bot');
+  }
+}
+
 export async function onReaction(r: MessageReaction | PartialMessageReaction, u: User | PartialUser, added: boolean): Promise<void> {
-  if (u.bot) return;
-  const menu = await prisma.roleMenu.findFirst({ where: { messageId: r.message.id, type: 'REACTION' } });
-  if (!menu || !r.message.guildId) return;
+  if (u.bot || !r.message.guildId) return;
+  const menu = await prisma.roleMenu.findFirst({ where: { messageId: r.message.id } });
+  if (!menu || !menu.enabled) return;
+  const c = configOf(menu);
+  if (c.kind !== 'REACTIONS') return;
   const key = r.emoji.id ?? r.emoji.name ?? '';
-  const options = opts(menu.options);
-  const opt = options.find((o) => o.emoji && emojiKey(o.emoji) === key);
+  const opt = c.reactions.find((o) => emojiKey(o.emoji) === key);
   if (!opt) return;
   try {
-    await apply(r.message.guildId, r.client, u.id, menu.mode, options.map((o) => o.roleId), opt.roleId, added);
-    // UNIQUE: drop the user's other reactions so the menu reflects the single choice.
-    if (added && menu.mode === 'UNIQUE') {
+    const g = r.client.guilds.cache.get(r.message.guildId);
+    const member = await g?.members.fetch(u.id);
+    if (!member) return;
+    const has = [...member.roles.cache.keys()];
+    if (gateReason(c.allowedRoles, c.deniedRoles, has)) {
+      if (added) await r.users.remove(u.id).catch(() => undefined);
+      return;
+    }
+    const change = resolveOption(c.mode, menuRoleIds(c), opt.roleIds, has, added);
+    if (change.blocked) {
+      if (added) await r.users.remove(u.id).catch(() => undefined);
+      return;
+    }
+    await apply(member, change);
+    // Unique/binding: drop the member's other reactions so the message shows one choice.
+    if (added && (c.mode === 'UNIQUE' || c.mode === 'BINDING')) {
       const msg = r.message.partial ? await r.message.fetch() : r.message;
       for (const other of msg.reactions.cache.values()) if ((other.emoji.id ?? other.emoji.name) !== key) await other.users.remove(u.id).catch(() => undefined);
     }

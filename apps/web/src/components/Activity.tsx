@@ -109,7 +109,7 @@ export function describe(l: AuditRow): View {
     case 'roleMenu.create':
     case 'roleMenu.update':
     case 'roleMenu.delete':
-      return { cat: 'mod', icon: '🎭', text: <>{l.action === 'roleMenu.create' ? 'สร้าง' : l.action === 'roleMenu.update' ? 'แก้ไข' : 'ลบ'} Reaction Role menu</>, ...(l.result === 'queued' ? { tone: 'ok' as Tone, label: 'ส่งคำสั่งแล้ว' } : done()) };
+      return { cat: 'mod', icon: '🎭', text: <>{l.action === 'roleMenu.create' ? 'สร้าง' : l.action === 'roleMenu.update' ? (d.enabled === false ? 'ปิดใช้' : d.enabled === true ? 'เปิดใช้' : 'แก้ไข') : 'ลบ'} reaction role {name ? <B>{name}</B> : null}</>, ...(l.result === 'queued' ? { tone: 'ok' as Tone, label: 'ส่งคำสั่งแล้ว' } : done()) };
     default:
       return { cat: 'sys', icon: '•', text: <code>{l.action}</code>, ...(l.result === 'queued' ? { tone: 'ok' as Tone, label: 'ส่งคำสั่งแล้ว' } : done(l.result)) };
   }

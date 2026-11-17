@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { BotPicker } from './BotPicker';
+import { Combo, type ComboItem } from './Combo';
 import { useApi } from '@/lib/client';
 import type { ChannelRow, GuildRow } from '@/lib/types';
 
@@ -35,24 +36,23 @@ export function useGuildAssets(guildRefId: string) {
   return { channels: ch.data?.channels ?? [], roles: roles.data?.roles ?? [], reload: () => { ch.reload(); roles.reload(); } };
 }
 
+const hex = (n: number) => (n ? `#${n.toString(16).padStart(6, '0')}` : undefined);
+
+/** Searchable channel dropdown, grouped by category like Discord. */
 export function ChannelSelect({ channels, value, onChange, placeholder = '— เลือกห้อง —' }: { channels: ChannelRow[]; value: string | null; onChange: (v: string | null) => void; placeholder?: string }) {
-  return (
-    <select value={value ?? ''} onChange={(e) => onChange(e.target.value || null)}>
-      <option value="">{placeholder}</option>
-      {channels.map((c) => <option key={c.channelId} value={c.channelId}>#{c.name}{c.parentName ? ` · ${c.parentName}` : ''}</option>)}
-    </select>
-  );
+  const items: ComboItem[] = channels.map((c) => ({ value: c.channelId, label: c.name, group: c.parentName ?? 'ไม่มีหมวด' }));
+  return <Combo items={items} value={value} onChange={(v) => onChange((v as string | null) || null)} placeholder={placeholder} prefix="#" empty="ไม่พบห้อง" />;
 }
 
+const roleItems = (roles: RoleRow[], onlyAssignable: boolean): ComboItem[] =>
+  roles.map((r) => ({ value: r.roleId, label: r.name, color: hex(r.color), disabled: onlyAssignable && !r.assignable, hint: onlyAssignable && !r.assignable ? (r.managed ? 'managed' : 'สูงกว่า Bot') : undefined }));
+
+/** Searchable single role dropdown. */
 export function RoleSelect({ roles, value, onChange, onlyAssignable = true }: { roles: RoleRow[]; value: string; onChange: (v: string) => void; onlyAssignable?: boolean }) {
-  return (
-    <select value={value} onChange={(e) => onChange(e.target.value)}>
-      <option value="">— เลือก role —</option>
-      {roles.map((r) => (
-        <option key={r.roleId} value={r.roleId} disabled={onlyAssignable && !r.assignable}>
-          @{r.name}{onlyAssignable && !r.assignable ? (r.managed ? ' (managed)' : ' (สูงกว่า Bot)') : ''}
-        </option>
-      ))}
-    </select>
-  );
+  return <Combo items={roleItems(roles, onlyAssignable)} value={value || null} onChange={(v) => onChange((v as string | null) ?? '')} placeholder="— เลือก role —" prefix="@" empty="ไม่พบ role" />;
+}
+
+/** Searchable multi role picker (tags). */
+export function RoleMulti({ roles, value, onChange, onlyAssignable = false, placeholder = 'เลือก role' }: { roles: RoleRow[]; value: string[]; onChange: (v: string[]) => void; onlyAssignable?: boolean; placeholder?: string }) {
+  return <Combo multi items={roleItems(roles, onlyAssignable)} value={value} onChange={(v) => onChange((v as string[]) ?? [])} placeholder={placeholder} prefix="@" empty="ไม่พบ role" />;
 }

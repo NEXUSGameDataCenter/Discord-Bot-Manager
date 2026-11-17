@@ -302,6 +302,9 @@ model RoleMenu {
   mode        String   @default("TOGGLE")
   /// [{ roleId, label, emoji, style }]
   options     Json     @default("[]")
+  /// Reaction roles v2 (see @nexus/shared reactionRoleSchema). Null = legacy columns above.
+  config      Json?
+  enabled     Boolean  @default(true)
   /// DRAFT | PUBLISHED | FAILED
   status      String   @default("DRAFT")
   lastError   String?
