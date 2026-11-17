@@ -15,6 +15,7 @@ import { startNotifyWorker } from './workers/notify';
 
 async function main() {
   logger.info({ assetStore: store.kind }, 'asset storage');
+  void import('./imageCache').then((m) => m.prefetchAll()).catch(() => undefined);
   const workers = [startControlWorker(), startProfileWorker(), startDispatchWorker(), startDeliveryWorker(), startManageWorker(), startNotifyWorker()];
   const ping = startPingLoop();
   const configSub = startConfigListener();

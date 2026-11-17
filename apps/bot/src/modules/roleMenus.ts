@@ -15,9 +15,9 @@ import {
 import { prisma, type RoleMenu } from '@nexus/db';
 import { gateReason, legacyRoleMenu, menuRoleIds, reactionRoleSchema, resolveOption, resolveSelect, type ReactionRoleConfig, type RoleChange } from '@nexus/shared';
 import { logger } from '../logger';
-import { fetchImage, toApiEmbed } from '../workers/delivery';
+import { toApiEmbed } from '../workers/delivery';
+import { prefetchMenu, replyImages } from '../imageCache';
 import { emojiField, fillMemberVars, shortcodes } from '../emoji';
-import { store } from '../assets';
 import type { Embed } from '@nexus/shared';
 import type { Guild } from 'discord.js';
 
@@ -45,19 +45,6 @@ function emojifyEmbed(e: Embed, g: Guild): Embed {
   return { ...e, title: s(e.title), description: s(e.description), fields: e.fields?.map((f) => ({ ...f, name: s(f.name)!, value: s(f.value)! })), footer: e.footer && { ...e.footer, text: s(e.footer.text)! }, author: e.author && { ...e.author, name: s(e.author.name)! } };
 }
 
-/** Files for a button's ephemeral reply: uploaded assets + downloaded image links. */
-async function replyFiles(b: { replyFiles: string[]; replyImageUrls: string[] }) {
-  const assets = b.replyFiles.length ? await prisma.asset.findMany({ where: { id: { in: b.replyFiles } } }) : [];
-  const files = await Promise.all(assets.map(async (a) => ({ attachment: await store.get(a.storedAs), name: a.fileName })));
-  for (const [i, u] of b.replyImageUrls.entries()) {
-    try {
-      files.push(await fetchImage(u, i));
-    } catch (err) {
-      logger.warn({ err: (err as Error).message, url: u }, 'reply image failed');
-    }
-  }
-  return files;
-}
 
 function components(menuId: string, c: ReactionRoleConfig, g: Guild): APIActionRowComponent<APIMessageActionRowComponent>[] {
   const em = (e?: string) => parseEmoji(emojiField(e, g));
@@ -120,6 +107,7 @@ export async function publishRoleMenu(client: Client<true>, menuId: string): Pro
       for (const r of reacts) await msg.react(r).catch((err) => logger.warn({ err: err.message, emoji: r }, 'react failed'));
     }
     await prisma.roleMenu.update({ where: { id: menu.id }, data: { messageId: msg.id, status: 'PUBLISHED', lastError: null } });
+    void prefetchMenu(menu.config);
   } catch (err) {
     await prisma.roleMenu.update({ where: { id: menu.id }, data: { status: 'FAILED', lastError: err instanceof Error ? err.message : String(err) } });
     throw err;
@@ -158,7 +146,7 @@ export async function onRoleButton(i: ButtonInteraction): Promise<void> {
     if (gate) return void i.editReply(gate);
     const changed = btn.roleIds.length ? await apply(i.member, resolveOption(c.mode, menuRoleIds(c), btn.roleIds, has)) : '';
     const reply = btn.reply ? shortcodes(fillMemberVars(btn.reply, i.member, i.channel && 'name' in i.channel ? (i.channel.name ?? undefined) : undefined), i.guild) : '';
-    const files = await replyFiles(btn);
+    const files = await replyImages(btn);
     const text = [reply, changed].filter(Boolean).join('\n\n') || (files.length ? '' : 'ไม่มีการเปลี่ยนแปลง');
     await i.editReply({ content: text.slice(0, 2000) || undefined, files, allowedMentions: { parse: [] } });
   } catch (err) {
