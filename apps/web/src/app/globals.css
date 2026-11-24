@@ -231,7 +231,7 @@ details.more>summary{color:var(--t2);font-weight:400;font-size:13px}
   .two,.three{grid-template-columns:1fr}
   .bcrow{grid-template-columns:1fr 40px}.bcrow .chs{grid-column:1/-1;order:3}
 }
-@media(prefers-reduced-motion:no-preference){.main>*{animation:pin .3s var(--ease) both}@keyframes pin{from{opacity:0;transform:translateY(4px)}}}
+@media(prefers-reduced-motion:no-preference){.main>*{animation:pin .3s var(--ease) backwards}@keyframes pin{from{opacity:0;transform:translateY(4px)}}}
 
 /* notifications */
 .sbrandrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -363,3 +363,9 @@ details.more>summary{color:var(--t2);font-weight:400;font-size:13px}
 .timesel{display:inline-flex;align-items:center;gap:4px}.timesel select{width:auto;padding:6px 8px;font-family:var(--mono)}
 .repeat{display:grid;gap:10px}.repeat .chips{margin:0}
 .repeat-sum{font-size:13px;color:var(--t2);background:var(--panel2);border-radius:8px;padding:8px 12px}
+
+/* Layering: popups (dropdowns, calendars, menus, notifications) always sit above the page.
+   The entrance animation no longer fills forwards (it made every block its own layer), and any
+   block that holds an open popup is lifted above its later siblings. */
+.combo-list,.dtp-pop,.bpanel,details.menu .menupanel{z-index:1000}
+:is(.main>*,.card,.grid>*,.rrsec,.rrbox,.rropt,.rrmsg>*,.field,.targetrow,.toolbar,.pagehead):has(.combo.open,.dtp-pop,.bpanel,details.menu[open]){position:relative;z-index:900}
