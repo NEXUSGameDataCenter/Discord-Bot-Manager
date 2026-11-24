@@ -344,3 +344,22 @@ details.more>summary{color:var(--t2);font-weight:400;font-size:13px}
 .rrprevimg{max-width:240px;max-height:180px;border-radius:6px}
 .btnlike{display:inline-flex;align-items:center;height:30px;padding:0 10px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);font-size:12.5px;cursor:pointer}
 .btnlike:hover{background:var(--s3)}.btnlike.disabled{opacity:.45;cursor:not-allowed}
+
+/* date/time + repeat pickers */
+.dtp{position:relative;display:grid;gap:4px}
+.dtp-field{display:flex;align-items:center;gap:10px;width:100%;height:40px;padding:0 12px;background:var(--bg)!important;color:var(--t2);border:1px solid var(--line2);border-radius:9px;font-weight:400;text-align:left}
+.dtp-field:hover{border-color:var(--acc);background:var(--bg)!important}
+.dtp-field.open{border-color:var(--acc)}
+.dtp-pop{position:absolute;top:44px;left:0;z-index:80;width:320px;max-width:calc(100vw - 32px);background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:12px;box-shadow:0 16px 40px #000a}
+.dtp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.dtp-head b{font-weight:500}
+.dtp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dtp-dow{font-size:11.5px;color:var(--muted);text-align:center;padding:4px 0}
+.dtp-day{height:34px;padding:0;background:transparent!important;color:var(--text);border:1px solid transparent;border-radius:8px;font:400 13px var(--mono)}
+.dtp-day:hover:not(:disabled){background:var(--panel2)!important}
+.dtp-day.today{border-color:var(--line2)}
+.dtp-day.sel{background:var(--acc)!important;color:#0b2a31;font-weight:500}
+.dtp-day:disabled{color:var(--muted);opacity:.4}
+.dtp-foot{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.timesel{display:inline-flex;align-items:center;gap:4px}.timesel select{width:auto;padding:6px 8px;font-family:var(--mono)}
+.repeat{display:grid;gap:10px}.repeat .chips{margin:0}
+.repeat-sum{font-size:13px;color:var(--t2);background:var(--panel2);border-radius:8px;padding:8px 12px}

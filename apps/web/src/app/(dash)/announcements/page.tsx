@@ -16,6 +16,7 @@ import { api, useApi } from '@/lib/client';
 import type { ChannelRow, GuildRow } from '@/lib/types';
 import { NavIcon } from '@/components/NavIcon';
 import { Combo } from '@/components/Combo';
+import { DateTimePicker, RepeatPicker } from '@/components/DateTimePicker';
 
 /* ---------- draft types (form state, converted to the zod payload on submit) ---------- */
 type FieldDraft = { name: string; value: string; inline: boolean };
@@ -197,19 +198,15 @@ export default function AnnouncementsPage() {
               <label>Send Timing</label>
               <select value={timing} onChange={(e) => setTiming(e.target.value as typeof timing)}>
                 <option value="now">Send Now</option>
-                <option value="at">Schedule Date &amp; Time</option>
-                <option value="cron">Repeat Schedule (Cron)</option>
+                <option value="at">ตั้งวันและเวลา (ครั้งเดียว)</option>
+                <option value="cron">ส่งซ้ำตามรอบ</option>
               </select>
             </div>
             {timing === 'at' && (
-              <div className="field"><label>Scheduled time (Asia/Bangkok)</label><input className="input" type="datetime-local" value={runAt} onChange={(e) => setRunAt(e.target.value)} /></div>
+              <div className="field"><label>วันและเวลาที่จะส่ง (เวลาไทย)</label><DateTimePicker value={runAt} onChange={setRunAt} /></div>
             )}
             {timing === 'cron' && (
-              <div className="field">
-                <label>Cron (minute hour day month weekday · Asia/Bangkok)</label>
-                <input className="input" value={cron} onChange={(e) => setCron(e.target.value)} />
-                <small className="sub">ตัวอย่าง: <code>0 9 * * 1</code> = ทุกวันจันทร์ 09:00 · <code>0 12 1 * *</code> = วันที่ 1 ของทุกเดือน 12:00</small>
-              </div>
+              <div className="field"><label>รอบการส่ง</label><RepeatPicker value={cron} onChange={setCron} /></div>
             )}
             <label className="checkrow"><input type="checkbox" checked={crosspost} onChange={(e) => setCrosspost(e.target.checked)} /> Auto-publish (crosspost) ในห้อง Announcement</label>
             <details>
@@ -223,7 +220,7 @@ export default function AnnouncementsPage() {
             </details>
             <div className="notice">ยืนยันการส่งไปยัง {serverCount} Servers และ {active.length} Channels ก่อนดำเนินการ</div>
             <label className="checkrow"><input type="checkbox" checked={finalConfirm} onChange={(e) => setFinalConfirm(e.target.checked)} /> ฉันตรวจสอบปลายทางและเนื้อหาเรียบร้อยแล้ว</label>
-            <button disabled={sending || !active.length || !!payloadErrors.length || !!targetProblems.length || (timing === 'at' && !runAt)} onClick={submit}>
+            <button disabled={sending || !active.length || !!payloadErrors.length || !!targetProblems.length || (timing === 'at' && (!runAt || runAt <= new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 16)))} onClick={submit}>
               {timing === 'now' ? 'Queue Announcement' : 'Schedule Announcement'}
             </button>
           </section>
